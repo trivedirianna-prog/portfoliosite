@@ -28,6 +28,24 @@
    without turning into a second competing gradient. */
 
 .material-glossy {
+  /* Highlight geometry as custom properties, not hardcoded values — every
+     object using this class has its own rotation and silhouette (§3), so
+     a single fixed highlight position/angle would look identical (and
+     therefore wrong) on all five differently-rotated objects. Override
+     any of these per instance, e.g.:
+       <div class="material-glossy" style="--glossy-highlight-angle: 24deg; --glossy-highlight-x: 55%;">
+     Defaults below reproduce the reference look; nothing changes unless
+     an instance overrides them. */
+  --glossy-highlight-x: 13%;
+  --glossy-highlight-y: 9%;
+  --glossy-highlight-w: 26%;
+  --glossy-highlight-h: 8%;
+  --glossy-highlight-angle: -15deg;
+  --glossy-glow2-x: 14%;
+  --glossy-glow2-y: 10%;
+  --glossy-glow2-w: 20%;
+  --glossy-glow2-h: 12%;
+
   position: relative;
   overflow: hidden;
   background:
@@ -47,14 +65,16 @@
    needs to read as a hard reflection bouncing off a physical surface, not
    a glow being emitted. Emitted light is reserved for the wordmark alone
    (§4) — every other glossy object only ever reflects. Slightly stretched
-   to imply the curve it's glancing off. */
+   to imply the curve it's glancing off; position/angle come from the
+   custom properties above so each object can aim it to match its own
+   rotation and curvature. */
 .material-glossy::before {
   content: "";
   position: absolute;
-  top: 9%;
-  left: 13%;
-  width: 26%;
-  height: 8%;
+  top: var(--glossy-highlight-y);
+  left: var(--glossy-highlight-x);
+  width: var(--glossy-highlight-w);
+  height: var(--glossy-highlight-h);
   border-radius: 50%;
   background: radial-gradient(
     closest-side,
@@ -62,7 +82,7 @@
     rgba(255, 255, 255, 0.4) 45%,
     transparent 72%
   );
-  transform: rotate(-15deg);
+  transform: rotate(var(--glossy-highlight-angle));
   filter: blur(0.4px);
   mix-blend-mode: screen;
   opacity: 0.95;
@@ -71,14 +91,16 @@
 }
 
 /* A faint secondary glow, low-opacity and far smaller — reads as curvature
-   catching ambient light, deliberately not a second bright highlight. */
+   catching ambient light, deliberately not a second bright highlight.
+   Independently positionable from the primary highlight since a curved
+   object typically wants it diagonally opposite, not mirrored by formula. */
 .material-glossy::after {
   content: "";
   position: absolute;
-  bottom: 10%;
-  right: 14%;
-  width: 20%;
-  height: 12%;
+  bottom: var(--glossy-glow2-y);
+  right: var(--glossy-glow2-x);
+  width: var(--glossy-glow2-w);
+  height: var(--glossy-glow2-h);
   border-radius: 50%;
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.25), transparent 75%);
   mix-blend-mode: screen;
@@ -104,6 +126,14 @@
    is tight and hard — the real material distinction §10 asks for between
    glossy variants, not just a color/opacity swap. */
 .material-glossy--translucent {
+  /* Same per-instance override mechanism as the chrome highlight above,
+     just with defaults sized for a soft scatter instead of a hard glint. */
+  --glossy-highlight-x: 8%;
+  --glossy-highlight-y: 4%;
+  --glossy-highlight-w: 55%;
+  --glossy-highlight-h: 38%;
+  --glossy-highlight-angle: -12deg;
+
   background: color-mix(in srgb, var(--color-surface-glossy-flat) 40%, transparent);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
@@ -114,17 +144,12 @@
 }
 
 .material-glossy--translucent::before {
-  top: 4%;
-  left: 8%;
-  width: 55%;
-  height: 38%;
   background: radial-gradient(
     closest-side,
     rgba(255, 255, 255, 0.55),
     rgba(255, 255, 255, 0.18) 55%,
     transparent 82%
   );
-  transform: rotate(-12deg);
   filter: blur(6px);
   opacity: 0.85;
 }
