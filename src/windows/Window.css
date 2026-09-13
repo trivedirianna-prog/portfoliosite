@@ -1,0 +1,15 @@
+.window {
+  position: absolute;
+  z-index: var(--z-windows);
+  background: var(--color-surface-paper);
+  box-shadow: var(--shadow-window);
+  border-radius: var(--radius-lg);
+}
+
+.window__title {
+  padding: var(--space-2) var(--space-4);
+}
+
+.window__content {
+  padding: var(--space-4);
+}

@@ -1,0 +1,28 @@
+/*
+  Material system per design spec §10.
+  Two deliberate material families — never mixed on the same object:
+  - .material-glossy: Projects (CD-R), Contact (transmission device),
+    the cursor, and the wordmark. Glossy plastic / chrome / glass.
+  - .material-paper: About (journal), Education (catalog card),
+    Committees (card wallet). Paper/editorial ephemera.
+  These are utility base classes to compose from, not finished object
+  styles — each object still needs its own distinct silhouette.
+*/
+
+.material-glossy {
+  background: linear-gradient(
+    155deg,
+    var(--color-plum-600),
+    var(--color-magenta-500) 60%,
+    var(--color-ice-400)
+  );
+  box-shadow: var(--shadow-object-resting);
+  border-radius: var(--radius-md);
+}
+
+.material-paper {
+  background: var(--color-surface-paper);
+  color: var(--color-text-on-paper);
+  box-shadow: var(--shadow-object-resting);
+  border-radius: var(--radius-sm);
+}

@@ -1,0 +1,39 @@
+/*
+  Typography system per design spec §11.
+  - Editorial serif: section titles, window content, body text.
+  - Monospace: small doses only — window title labels, timestamps/status
+    marks, object captions (§7.5). Never body copy, never a full block.
+  Font families are system-stack placeholders until real typefaces are
+  chosen; the CSS variable names are what the rest of the app depends on.
+*/
+
+:root {
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --text-window-title: 0.75rem;
+  --text-caption: 0.7rem;
+  --text-body: 1rem;
+  --text-heading-sm: 1.5rem;
+  --text-heading-md: 2.25rem;
+  --text-heading-lg: 3.5rem;
+
+  --tracking-mono-label: 0.08em;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Utility for the system-fingerprint monospace labels described in §7.3
+   and §7.5 (window titles, object captions, status marks). Small doses only. */
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-mono-label);
+  text-transform: uppercase;
+}

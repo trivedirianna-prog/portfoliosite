@@ -1,0 +1,19 @@
+.desktop {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.desktop__wordmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-desktop-objects);
+}
+
+.desktop__objects {
+  position: absolute;
+  inset: 0;
+}

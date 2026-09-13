@@ -1,0 +1,21 @@
+/*
+  Shared placeholder geometry for the five section objects. Each section
+  keeps its own .css file for the distinct silhouette it will eventually
+  need (§8) — this shared base only exists so five scaffold placeholders
+  don't repeat identical box styling.
+*/
+
+.section-object {
+  position: absolute;
+  z-index: var(--z-desktop-objects);
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-object__caption {
+  position: absolute;
+  bottom: calc(-1 * var(--space-6));
+}

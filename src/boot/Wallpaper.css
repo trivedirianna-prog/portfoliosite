@@ -1,0 +1,6 @@
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-wallpaper);
+  background: var(--color-bg-canvas);
+}
