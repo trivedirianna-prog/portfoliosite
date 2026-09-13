@@ -18,17 +18,21 @@
   silhouette layered on top (§8).
 */
 
-/* --- Glossy: chrome / plastic / glass --- */
+/* --- Glossy: chrome / plastic / glass ---
+   Real glossy plastic is a mostly-flat base color with ONE tight, bright
+   catch of light — not an even hue gradient washing across the whole
+   surface (that reads as a generic "purple gradient card," explicitly
+   ruled out by §1.2). The base here stays close to flat; a small blurred
+   highlight ellipse (::before) supplies the specular catch, and a second,
+   much dimmer counter-highlight (::after) suggests the surface is curved
+   without turning into a second competing gradient. */
 
 .material-glossy {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    155deg,
-    var(--color-surface-glossy-a),
-    var(--color-surface-glossy-b) 55%,
-    var(--color-surface-glossy-c) 100%
-  );
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.14)),
+    var(--color-surface-glossy-flat);
   border-radius: var(--radius-md);
   box-shadow:
     var(--shadow-object-resting),
@@ -39,20 +43,42 @@
     box-shadow var(--duration-standard) var(--ease-standard);
 }
 
-/* Specular sheen band — the "light source" quality every glossy surface
-   in this system should carry, per §1.1's dimensional lighting. */
+/* The catch-light: small, bright, off-center — like a single light source
+   reflecting off a curved plastic surface. */
 .material-glossy::before {
   content: "";
   position: absolute;
-  inset: -20%;
-  background: linear-gradient(
-    115deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.55) 45%,
-    transparent 62%
+  top: 6%;
+  left: 10%;
+  width: 42%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.22) 60%,
+    transparent 80%
   );
+  transform: rotate(-18deg);
+  filter: blur(2px);
   mix-blend-mode: screen;
-  opacity: 0.55;
+  opacity: 0.9;
+  pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease-standard);
+}
+
+/* A faint secondary glow, low-opacity and far smaller — reads as curvature
+   catching ambient light, deliberately not a second bright highlight. */
+.material-glossy::after {
+  content: "";
+  position: absolute;
+  bottom: 10%;
+  right: 14%;
+  width: 20%;
+  height: 12%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.25), transparent 75%);
+  mix-blend-mode: screen;
   pointer-events: none;
 }
 
@@ -64,15 +90,16 @@
     inset 0 -14px 24px var(--color-border-glossy-shadow);
 }
 
+.material-glossy:hover::before {
+  opacity: 1;
+}
+
 /* Glass variant — apply alongside .material-glossy (not standalone) on
-   objects that should read as translucent rather than solid plastic. */
+   objects that should read as translucent rather than solid plastic. The
+   catch-light from .material-glossy::before still applies; only the base
+   surface changes from flat plastic to a thin, blurred, faintly-tinted pane. */
 .material-glossy--translucent {
-  background: linear-gradient(
-    155deg,
-    color-mix(in srgb, var(--color-surface-glossy-a) 55%, transparent),
-    color-mix(in srgb, var(--color-surface-glossy-b) 35%, transparent) 55%,
-    color-mix(in srgb, var(--color-surface-glossy-c) 30%, transparent) 100%
-  );
+  background: color-mix(in srgb, var(--color-surface-glossy-flat) 40%, transparent);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   box-shadow:

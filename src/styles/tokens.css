@@ -22,10 +22,13 @@
   --color-magenta-400: #e162a8;
   --color-magenta-300: #f08fc2;
 
-  /* --- Color: icy-blue scale (cool accent, undertone) --- */
-  --color-ice-500: #5cc3da;
-  --color-ice-400: #8fe1f0;
-  --color-ice-300: #b9eef7;
+  /* --- Color: icy-blue scale (cool accent, undertone) ---
+     Deliberately desaturated toward steel/slate blue rather than a
+     vivid cyan — this needs to read as a cool undertone on nearby
+     surfaces, not a third hue competing with the plum/magenta identity. */
+  --color-ice-500: #6f8fa3;
+  --color-ice-400: #9db3c2;
+  --color-ice-300: #c3d2da;
 
   /* --- Color: pearl / chrome neutrals (paper + glossy highlights) --- */
   --color-pearl: #f6eef4;
@@ -41,6 +44,14 @@
   --color-surface-glossy-a: var(--color-plum-600);
   --color-surface-glossy-b: var(--color-magenta-500);
   --color-surface-glossy-c: var(--color-ice-400);
+  /* Flat base plastic/chrome color — real glossy plastic is one mostly-flat
+     color with a single catch-light, not a gradient blend across the whole
+     surface (see §1.2's anti-pattern list). */
+  --color-surface-glossy-flat: color-mix(
+    in srgb,
+    var(--color-plum-700) 62%,
+    var(--color-magenta-600) 38%
+  );
 
   --color-surface-paper: var(--color-pearl);
   --color-surface-paper-alt: var(--color-pearl-dim);
@@ -55,7 +66,14 @@
   --color-text-on-paper-dim: rgba(21, 10, 27, 0.6);
 
   --color-border-glossy-highlight: rgba(255, 255, 255, 0.45);
-  --color-border-glossy-shadow: rgba(10, 3, 14, 0.35);
+  /* Cool-tinted rather than neutral black — this is where the icy-blue
+     undertone actually lives on glossy objects: in the ambient reflected
+     shadow, not as a visible patch of color on the surface itself. */
+  --color-border-glossy-shadow: color-mix(
+    in srgb,
+    var(--color-ice-500) 20%,
+    rgba(10, 3, 14, 0.4)
+  );
   --color-border-paper: rgba(21, 10, 27, 0.1);
 
   /* --- Spacing scale --- */
