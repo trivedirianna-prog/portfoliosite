@@ -1,3 +1,4 @@
+import { getCssVar } from "../lib/theme";
 import "./StyleGuide.css";
 
 /*
@@ -54,16 +55,8 @@ const paletteGroups: { title: string; swatches: Swatch[] }[] = [
   },
 ];
 
-// Client-only page (no SSR), so the DOM — and the tokens applied to it —
-// is always available by render time; no effect needed to read it.
-function getComputedColor(cssVar: string) {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(cssVar)
-    .trim();
-}
-
 function SwatchCell({ swatch }: { swatch: Swatch }) {
-  const hex = getComputedColor(swatch.var);
+  const hex = getCssVar(swatch.var);
   return (
     <div className="swatch">
       <div
