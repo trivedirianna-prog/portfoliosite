@@ -1,38 +1,62 @@
 /*
   Design tokens: the single source of truth for color, spacing, radii,
-  shadow, and z-index values. Locked palette direction per design spec §11:
-  plum/aubergine + magenta, icy-blue undertone, moody/nighttime-leaning.
-  Values below are placeholders to be refined once real object/wallpaper
-  art direction begins — the token *names* and structure are what matters
-  at scaffolding time.
+  shadow, and z-index values. Palette direction per design spec §11:
+  plum/aubergine + magenta, icy-blue undertone, moody/nighttime-leaning —
+  chosen because it's most coherent with the dusk → night → dawn
+  wallpaper progression (§5) and gives icy blue a real functional home
+  as an accent rather than an afterthought.
 */
 
 :root {
-  /* --- Color: base palette (plum/aubergine + magenta + icy blue) --- */
-  --color-plum-950: #1a0e1f;
-  --color-plum-900: #241228;
-  --color-plum-800: #341a3a;
-  --color-plum-700: #48244f;
-  --color-plum-600: #5f2f68;
+  /* --- Color: plum/aubergine scale (base + surfaces) --- */
+  --color-plum-950: #180b1e;
+  --color-plum-900: #221030;
+  --color-plum-800: #341742;
+  --color-plum-700: #4a2058;
+  --color-plum-600: #632c72;
+  --color-plum-500: #7e3d8c;
 
-  --color-magenta-500: #c23f8a;
-  --color-magenta-400: #d85ea3;
-  --color-magenta-300: #ea86bf;
+  /* --- Color: magenta scale (primary accent) --- */
+  --color-magenta-600: #a62e6f;
+  --color-magenta-500: #c93f8a;
+  --color-magenta-400: #e162a8;
+  --color-magenta-300: #f08fc2;
 
-  --color-ice-400: #8fd6e8;
-  --color-ice-300: #b3e6f2;
+  /* --- Color: icy-blue scale (cool accent, undertone) --- */
+  --color-ice-500: #5cc3da;
+  --color-ice-400: #8fe1f0;
+  --color-ice-300: #b9eef7;
 
-  --color-pearl: #f4eef2;
-  --color-chrome: #d8d6de;
+  /* --- Color: pearl / chrome neutrals (paper + glossy highlights) --- */
+  --color-pearl: #f6eef4;
+  --color-pearl-dim: #e9dce6;
+  --color-chrome-100: #e4e1ea;
+  --color-chrome-300: #b8b3c4;
+  --color-ink: #150a1b;
 
   /* --- Semantic color roles --- */
   --color-bg-canvas: var(--color-plum-950);
-  --color-surface-glossy: var(--color-plum-700);
+  --color-bg-canvas-alt: var(--color-plum-900);
+
+  --color-surface-glossy-a: var(--color-plum-600);
+  --color-surface-glossy-b: var(--color-magenta-500);
+  --color-surface-glossy-c: var(--color-ice-400);
+
   --color-surface-paper: var(--color-pearl);
+  --color-surface-paper-alt: var(--color-pearl-dim);
+
   --color-accent-primary: var(--color-magenta-400);
+  --color-accent-secondary: var(--color-magenta-300);
   --color-accent-cool: var(--color-ice-400);
+
   --color-text-on-dark: var(--color-pearl);
-  --color-text-on-paper: var(--color-plum-950);
+  --color-text-on-dark-dim: var(--color-chrome-300);
+  --color-text-on-paper: var(--color-ink);
+  --color-text-on-paper-dim: rgba(21, 10, 27, 0.6);
+
+  --color-border-glossy-highlight: rgba(255, 255, 255, 0.45);
+  --color-border-glossy-shadow: rgba(10, 3, 14, 0.35);
+  --color-border-paper: rgba(21, 10, 27, 0.1);
 
   /* --- Spacing scale --- */
   --space-1: 0.25rem;

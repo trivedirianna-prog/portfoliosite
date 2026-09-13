@@ -1,0 +1,140 @@
+/*
+  Layout for the internal style-guide page only. This file is presentation
+  scaffolding for reviewing tokens/materials — it is not part of the
+  design system itself (that lives in src/styles/).
+
+  This page is a separate Vite entry from the real app, so overriding the
+  base reset's fixed, non-scrolling canvas (src/styles/reset.css — correct
+  for the real desktop, wrong for a long reference page) here only affects
+  this bundle.
+*/
+
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+}
+
+.styleguide {
+  padding: var(--space-16) var(--space-12) var(--space-16);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.styleguide__header {
+  margin-bottom: var(--space-16);
+}
+
+.styleguide__kicker {
+  color: var(--color-accent-cool);
+  margin-bottom: var(--space-4);
+}
+
+.styleguide__header .type-body {
+  color: var(--color-text-on-dark-dim);
+  max-width: 56ch;
+}
+
+.styleguide__section {
+  margin-bottom: var(--space-16);
+  padding-top: var(--space-8);
+  border-top: 1px solid rgba(246, 238, 244, 0.12);
+}
+
+.styleguide__section .type-body-italic {
+  color: var(--color-text-on-dark-dim);
+  margin-bottom: var(--space-8);
+  max-width: 56ch;
+}
+
+/* --- Palette --- */
+
+.palette-group {
+  margin-bottom: var(--space-8);
+}
+
+.palette-group__title {
+  color: var(--color-text-on-dark-dim);
+  margin-bottom: var(--space-3);
+}
+
+.palette-group__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.swatch {
+  width: 108px;
+}
+
+.swatch__chip {
+  width: 108px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-object-resting);
+  margin-bottom: var(--space-2);
+}
+
+.swatch__name {
+  color: var(--color-text-on-dark);
+}
+
+.swatch__hex {
+  color: var(--color-text-on-dark-dim);
+}
+
+/* --- Typography --- */
+
+.type-sample {
+  margin-bottom: var(--space-6);
+}
+
+.type-sample__label {
+  color: var(--color-accent-cool);
+  margin-bottom: var(--space-2);
+}
+
+.mono-demo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  color: var(--color-text-on-dark);
+}
+
+/* --- Materials --- */
+
+.material-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.material-demo {
+  width: 220px;
+  height: 220px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: default;
+}
+
+.material-demo__label {
+  color: var(--color-text-on-dark-dim);
+  margin-bottom: var(--space-2);
+}
+
+.material-demo.material-paper .material-demo__label {
+  color: var(--color-text-on-paper-dim);
+}
+
+.material-demo__title {
+  color: var(--color-text-on-dark);
+}
+
+.material-demo.material-paper .material-demo__title {
+  color: var(--color-text-on-paper);
+}

@@ -1,23 +1,48 @@
 /*
   Typography system per design spec §11.
-  - Editorial serif: section titles, window content, body text.
-  - Monospace: small doses only — window title labels, timestamps/status
-    marks, object captions (§7.5). Never body copy, never a full block.
-  Font families are system-stack placeholders until real typefaces are
-  chosen; the CSS variable names are what the rest of the app depends on.
+  - Editorial serif (Fraunces): section titles, window content, body text —
+    sophisticated, magazine-headline register. Fraunces was chosen over a
+    more classical editorial serif for its soft, slightly quirky curves —
+    "Y2K imagined future, redesigned with modern taste," not a straight
+    period pastiche.
+  - Monospace accent (Space Mono): window title labels, timestamps/status
+    marks, object captions (§7.5) only. A geometric mono with a period-
+    appropriate retro-futuristic character, without tipping into a literal
+    terminal/hacker typeface.
+  - Critical constraint: monospace stays in small doses — labels, tiny
+    captions — never body copy, never a full block of monospace text.
 */
 
-:root {
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/400-italic.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
 
-  --text-window-title: 0.75rem;
+:root {
+  --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-mono: "Space Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --weight-serif-regular: 400;
+  --weight-serif-medium: 500;
+  --weight-serif-semibold: 600;
+  --weight-mono-regular: 400;
+  --weight-mono-bold: 700;
+
+  /* Type scale — editorial serif is the workhorse; sizes tuned so the
+     largest headline reads as a magazine masthead rather than a hero banner. */
   --text-caption: 0.7rem;
-  --text-body: 1rem;
+  --text-window-title: 0.75rem;
+  --text-body: 1.0625rem;
   --text-heading-sm: 1.5rem;
   --text-heading-md: 2.25rem;
-  --text-heading-lg: 3.5rem;
+  --text-heading-lg: 3.75rem;
 
+  --leading-body: 1.6;
+  --leading-heading: 1.05;
+
+  --tracking-heading: -0.01em;
   --tracking-mono-label: 0.08em;
 }
 
@@ -29,10 +54,61 @@
   font-family: var(--font-mono);
 }
 
-/* Utility for the system-fingerprint monospace labels described in §7.3
-   and §7.5 (window titles, object captions, status marks). Small doses only. */
+/* --- Editorial serif treatments --- */
+
+.type-display {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-medium);
+  font-size: var(--text-heading-lg);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
+.type-heading {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: var(--text-heading-md);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
+.type-subheading {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: var(--text-heading-sm);
+  line-height: var(--leading-heading);
+}
+
+.type-body {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-regular);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.type-body-italic {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-regular);
+  font-style: italic;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+/* --- Monospace "system fingerprint" accents ---
+   Used only for window title labels, timestamps/status marks, and the
+   small object captions from §7.5. Keep to single lines, never a block. */
+
 .label-mono {
   font-family: var(--font-mono);
+  font-weight: var(--weight-mono-regular);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-mono-label);
+  text-transform: uppercase;
+}
+
+.label-mono--bold {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-mono-bold);
   font-size: var(--text-caption);
   letter-spacing: var(--tracking-mono-label);
   text-transform: uppercase;

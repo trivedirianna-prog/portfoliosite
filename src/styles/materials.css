@@ -1,28 +1,108 @@
 /*
   Material system per design spec §10.
   Two deliberate material families — never mixed on the same object:
-  - .material-glossy: Projects (CD-R), Contact (transmission device),
-    the cursor, and the wordmark. Glossy plastic / chrome / glass.
-  - .material-paper: About (journal), Education (catalog card),
-    Committees (card wallet). Paper/editorial ephemera.
-  These are utility base classes to compose from, not finished object
-  styles — each object still needs its own distinct silhouette.
+
+  - .material-glossy: Projects (CD-R), Contact (transmission device), the
+    cursor, and the wordmark. Glossy plastic / chrome, with a translucent
+    glass variant (.material-glossy--translucent, combined on the same
+    element) for objects that should read as glass rather than solid
+    plastic. Deliberate variation within the glossy family per §10 — not
+    everything is chrome, not everything is glass.
+
+  - .material-paper: About (journal), Education (catalog card), Committees
+    (card wallet). Paper/editorial ephemera — the "this belongs to a
+    specific person" interruption to the glossy machine identity.
+
+  These are foundational, reusable base classes — not finished object
+  styles. Each of the five section objects still needs its own distinct
+  silhouette layered on top (§8).
 */
 
+/* --- Glossy: chrome / plastic / glass --- */
+
 .material-glossy {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(
     155deg,
-    var(--color-plum-600),
-    var(--color-magenta-500) 60%,
-    var(--color-ice-400)
+    var(--color-surface-glossy-a),
+    var(--color-surface-glossy-b) 55%,
+    var(--color-surface-glossy-c) 100%
   );
-  box-shadow: var(--shadow-object-resting);
   border-radius: var(--radius-md);
+  box-shadow:
+    var(--shadow-object-resting),
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    inset 0 -14px 24px var(--color-border-glossy-shadow);
+  transition:
+    transform var(--duration-standard) var(--ease-standard),
+    box-shadow var(--duration-standard) var(--ease-standard);
 }
 
+/* Specular sheen band — the "light source" quality every glossy surface
+   in this system should carry, per §1.1's dimensional lighting. */
+.material-glossy::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 45%,
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.material-glossy:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    var(--shadow-object-lifted),
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    inset 0 -14px 24px var(--color-border-glossy-shadow);
+}
+
+/* Glass variant — apply alongside .material-glossy (not standalone) on
+   objects that should read as translucent rather than solid plastic. */
+.material-glossy--translucent {
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--color-surface-glossy-a) 55%, transparent),
+    color-mix(in srgb, var(--color-surface-glossy-b) 35%, transparent) 55%,
+    color-mix(in srgb, var(--color-surface-glossy-c) 30%, transparent) 100%
+  );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    var(--shadow-object-resting),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+/* --- Paper / editorial ephemera --- */
+
 .material-paper {
-  background: var(--color-surface-paper);
+  position: relative;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(21, 10, 27, 0.035) 0, transparent 2px),
+    radial-gradient(circle at 70% 65%, rgba(21, 10, 27, 0.03) 0, transparent 2px),
+    linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+  background-size:
+    6px 6px,
+    7px 7px,
+    100% 100%;
   color: var(--color-text-on-paper);
-  box-shadow: var(--shadow-object-resting);
+  border: 1px solid var(--color-border-paper);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-object-resting);
+  transition:
+    transform var(--duration-standard) var(--ease-standard),
+    box-shadow var(--duration-standard) var(--ease-standard);
+}
+
+.material-paper:hover {
+  transform: translateY(-2px) rotate(-0.3deg);
+  box-shadow: var(--shadow-object-lifted);
 }
