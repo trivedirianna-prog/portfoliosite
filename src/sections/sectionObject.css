@@ -114,6 +114,23 @@
    never overlap each other; --tertiary (Projects, §8.3, up to three at
    once) sits at the right-middle edge, clear of both top corners and
    the caption below. */
+/* Entrance for the tab appearing (mount coincides with the window's own
+   minimize-tuck animation finishing, see Window.tsx's handleMinimize) —
+   plays once on mount, never repeats. Animates the standalone `scale`
+   property rather than `transform`, since `--tertiary` below declares
+   its own resting `transform: translateY(-50%)` that this must not
+   clobber for the animation's duration. */
+@keyframes dock-tab-enter {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
 .section-object__dock-tab {
   position: absolute;
   top: -6px;
@@ -131,6 +148,8 @@
   color: var(--color-text-on-dark);
   font-size: 0.6rem;
   cursor: pointer;
+  scale: 1;
+  animation: dock-tab-enter var(--duration-standard) var(--ease-standard);
   transition:
     transform var(--duration-standard) var(--ease-standard),
     box-shadow var(--duration-standard) var(--ease-standard);

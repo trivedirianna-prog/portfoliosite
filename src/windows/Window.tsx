@@ -43,11 +43,14 @@ import "./Window.css";
   spawning object's own on-screen rect — see WindowManager's
   originRects), the window animates in from that rect's position/scale
   instead of simply appearing at its resting spot, and retracts back to
-  it on close instead of just vanishing. Both are quick, easing-only GSAP
-  tweens (no spring/bounce) per the "calm by default, responsive when
-  touched" motion principle. Without an originRect, open/close are
-  instant, same as before — this is additive, not a requirement every
-  caller has to satisfy.
+  it on close instead of just vanishing. Minimize retracts too, but
+  toward the object's corner (roughly where its dock tab lands) rather
+  than its center, and shrinks much further — "tucking away to a small
+  tab," not "returning to the object itself." All three are quick,
+  easing-only GSAP tweens (no spring/bounce) per the "calm by default,
+  responsive when touched" motion principle. Without an originRect,
+  open/close/minimize are instant, same as before — this is additive,
+  not a requirement every caller has to satisfy.
 
   §7.2 dragging: every window is draggable by its title bar (GSAP
   Draggable), session-only — there is no persisted position anywhere, so
@@ -115,6 +118,16 @@ interface WindowProps {
 
 const OPEN_DURATION = 0.32;
 const CLOSE_DURATION = 0.22;
+const MINIMIZE_DURATION = 0.24;
+// Minimize shrinks toward roughly where the dock tab will appear — the
+// object's own top-right corner (§7.4's default tab position; the
+// secondary/tertiary corner variants a multi-window section uses are
+// close enough to this same corner that a single generic target reads
+// correctly for all of them) — rather than the object's center, which
+// is what close's own retract-to-icon already uses. Ending far smaller
+// than close's own endScale (which settles at the object's full size)
+// since the destination is a small tab, not the object itself.
+const MINIMIZE_END_SCALE = 0.16;
 
 export function Window({
   title,
@@ -246,6 +259,36 @@ export function Window({
     });
   }
 
+  function handleMinimize(e: React.MouseEvent) {
+    e.stopPropagation();
+    const el = rootRef.current;
+    if (!el || !originRect) {
+      onMinimize();
+      return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    // Target the object's own top-right corner rather than its center —
+    // "tucking away to the dock," not "returning to the object" (that's
+    // close's own destination point). Relative deltas for the same
+    // reason as handleClose: the window may have been dragged since it
+    // opened.
+    const dx = originRect.x + originRect.width - rect.x - rect.width / 2;
+    const dy = originRect.y - rect.y - rect.height / 2;
+
+    gsap.to(el, {
+      xPercent: -50,
+      yPercent: -50,
+      x: `+=${dx}`,
+      y: `+=${dy}`,
+      scale: MINIMIZE_END_SCALE,
+      opacity: 0,
+      duration: MINIMIZE_DURATION,
+      ease: "power1.in",
+      onComplete: onMinimize,
+    });
+  }
+
   return (
     <div
       ref={rootRef}
@@ -274,10 +317,7 @@ export function Window({
             type="button"
             className="window__control window__control--minimize"
             aria-label={`Minimize ${title}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onMinimize();
-            }}
+            onClick={handleMinimize}
           >
             <svg viewBox="0 0 12 12" aria-hidden="true">
               <line x1="2.5" y1="6" x2="9.5" y2="6" />
