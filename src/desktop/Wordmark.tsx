@@ -30,21 +30,31 @@ import "./Wordmark.css";
   written," which a segmented letter-by-letter ignition never could for
   a script this connected.
 
-  Mrs Saint Delafield ships with no GSUB table at all (verified directly
-  against the font binary — zero stylistic-alternate features, and no
-  second glyph mapped to "R" anywhere in its glyph set), so the capital
-  R's swash loop can't be swapped for a clearer alternate at the font
-  level. Scaling that same glyph up only made the ambiguous closed-loop
-  shape more dominant, not more legible — the leg that actually reads as
-  "R" rather than "P" stayed just as thin relative to it. Pairing the
-  script with Fraunces' own italic capital for just that one letter is a
-  real fix instead: mixing a clear display capital with a connecting
-  script for an initial is an established convention, and it also ties
-  the wordmark back to the site's own serif rather than introducing an
-  unrelated third typeface.
+  Capital R: back to Mrs Saint Delafield's own glyph (a prior pass
+  substituted Fraunces italic for just this letter; reverted per
+  direction — no second typeface). The font has no GSUB table and no
+  alternate R glyph to swap in (verified against the binary), so if the
+  resting, filled state is still ambiguous, the fix has to be a manual
+  SVG path edit reinforcing the glyph's own leg stroke, not a font swap.
 */
 
 const WORDMARK_TEXT = "Rianna Trivedi";
+
+// Mrs Saint Delafield's capital R, extracted via opentype.js, is one
+// outer contour plus two counter-holes (fill-rule evenodd): one is the
+// loop's own counter (upper right), the other sits INSIDE the leg's own
+// downstroke (x:5.7-65, y:-67.8 to 6.1 at this 150-unit em) — meaning
+// the leg isn't a faint stroke, it's a hollow outline ribbon with no ink
+// in the middle, which is exactly why it reads as insubstantial next to
+// the bold closed loop above it ("Pianna" at a glance). This is that
+// hole's own path, extracted at font-size 150 (matching .wordmark__glyphs'
+// font-size) — filling it in solid, positioned exactly over the live
+// text's own "R" via getStartPositionOfChar, turns the leg into real ink
+// without touching the loop or drawing anything freehand.
+const R_LEG_HOLE_PATCH_D =
+  "M6.45,6.15 L6.45,6.15 Q9.90,6.15 21.15,-5.40 Q32.40,-16.95 45.45,-34.95 " +
+  "Q58.50,-52.95 64.95,-67.80 L64.95,-67.80 Q41.25,-47.40 23.47,-25.65 " +
+  "Q5.70,-3.90 5.70,5.10 L5.70,5.10 Q5.70,6.15 6.45,6.15";
 
 interface WordmarkProps {
   animate?: boolean;
@@ -61,6 +71,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const glowRef = useRef<SVGGElement>(null);
   const innerGlowRef = useRef<SVGEllipseElement>(null);
   const outerGlowRef = useRef<SVGEllipseElement>(null);
+  const rLegPatchRef = useRef<SVGPathElement>(null);
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -75,13 +86,21 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       const box = textRef.current.getBBox();
       const cx = box.x + box.width / 2;
       const cy = box.y + box.height / 2;
+      // ry multipliers were 1.05/1.9 — against a bbox already taller than
+      // the SVG's own 220-unit viewBox (the oversized cap + the script's
+      // own descenders/flourishes push box.height past 260 units), that
+      // produced an outer radius of ~496 units: a glow nearly 2.25x the
+      // viewBox's own height, confirmed in isolation (Phase B.4) as a
+      // ~670x790px blob covering almost the full frame. Brought down to
+      // be proportionate to the width multipliers instead of compounding
+      // an already-oversized measurement.
       if (innerGlowRef.current) {
         gsap.set(innerGlowRef.current, {
           attr: {
             cx,
             cy,
             rx: box.width * 0.42,
-            ry: box.height * 1.05,
+            ry: box.height * 0.5,
           },
         });
       }
@@ -91,8 +110,19 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
             cx,
             cy,
             rx: box.width * 0.62,
-            ry: box.height * 1.9,
+            ry: box.height * 0.8,
           },
+        });
+      }
+
+      // Position the leg patch exactly over the live text's own "R" —
+      // getStartPositionOfChar gives the real browser-rendered glyph
+      // origin (accounting for textAnchor="middle" centering the whole
+      // string), so this stays correct regardless of font metrics/kerning.
+      if (rLegPatchRef.current) {
+        const start = textRef.current.getStartPositionOfChar(0);
+        gsap.set(rLegPatchRef.current, {
+          attr: { transform: `translate(${start.x}, ${start.y})` },
         });
       }
 
@@ -106,6 +136,9 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         strokeOpacity: 1,
       });
       gsap.set(glowRef.current, { opacity: 0 });
+      if (rLegPatchRef.current) {
+        gsap.set(rLegPatchRef.current, { fillOpacity: 0 });
+      }
 
       tl = gsap.timeline({ onComplete });
       tl.to(textRef.current, {
@@ -114,10 +147,11 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         ease: "power1.inOut",
       })
         .to(
-          textRef.current,
-          { fillOpacity: 1, strokeOpacity: 0, duration: 0.5 },
+          [textRef.current, rLegPatchRef.current].filter(Boolean),
+          { fillOpacity: 1, duration: 0.5 },
           "-=0.15",
         )
+        .to(textRef.current, { strokeOpacity: 0, duration: 0.5 }, "<")
         .to(glowRef.current, { opacity: 1, duration: 0.9 }, "-=0.3");
     });
 
@@ -168,9 +202,19 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         textAnchor="middle"
         className="wordmark__glyphs"
       >
-        <tspan className="wordmark__cap">R</tspan>
-        <tspan dx="4">ianna Trivedi</tspan>
+        {WORDMARK_TEXT}
       </text>
+
+      {/* Fills the hollow hole inside the capital R's own leg stroke —
+          see R_LEG_HOLE_PATCH_D above. Positioned via a runtime transform
+          (set in the effect once the real glyph position is known), fill
+          only, no stroke. */}
+      <path
+        ref={rLegPatchRef}
+        d={R_LEG_HOLE_PATCH_D}
+        className="wordmark__glyphs"
+        stroke="none"
+      />
     </svg>
   );
 }

@@ -1,18 +1,21 @@
 /*
   Wallpaper system per §5 — a single coded environment (no images): a
-  gradient sky, a horizon light bloom, layered SVG mountain/pine
-  silhouettes with atmospheric perspective, cloud clusters, a glossy
-  moon, and sparse glowing stars. Every element here stays in the DOM
-  permanently; only its color/opacity/position tweens between time-of-day
-  states (see Wallpaper.tsx), which is what keeps dusk/night/dawn reading
-  as one continuous world rather than three swapped-in scenes.
+  gradient sky, a horizon light bloom, layered SVG mountain silhouettes
+  with atmospheric perspective, and a glossy moon and sparse glowing
+  stars. Every element here stays in the DOM permanently; only its
+  color/opacity/position tweens between time-of-day states (see
+  Wallpaper.tsx), which is what keeps dusk/night/dawn reading as one
+  continuous world rather than three swapped-in scenes.
+
+  No trees, no clouds — the mountain silhouettes (far/mid/near, with the
+  two-peak V-valley) are the only foreground element.
 
   Layering (back to front, matching DOM order): sky -> stars -> moon ->
   horizon glow -> far mountain -> mid mountain (the two-peak silhouette)
-  -> clouds -> near pine treeline. Later layers occlude earlier ones,
-  which is how the moon ends up behind the ridge line, the mountains
-  occlude the horizon glow everywhere but the valley notch, and the
-  treeline sits in front of everything as the nearest, darkest layer.
+  -> near mountain. Later layers occlude earlier ones, which is how the
+  moon ends up behind the ridge line, the mountains occlude the horizon
+  glow everywhere but the valley notch, and the near layer sits in front
+  of everything as the nearest, darkest layer.
 */
 
 .wallpaper {
@@ -26,14 +29,20 @@
 .wallpaper__sky {
   position: absolute;
   inset: 0;
-  /* A genuine hue journey (indigo -> violet -> magenta), not a lightness
-     gradient on one hue: three real color stops, all tweened between
-     scenes (see Wallpaper.tsx), not just two. */
+  /* A genuine hue journey (indigo -> violet -> magenta) that arrives
+     EARLY (fully there by 45%) rather than only at the very bottom edge:
+     the mountains occlude the sky from ~y=40% down, so a gradient that
+     only reaches its vivid color near y=100% is invisible in practice —
+     confirmed via the isolated sky+mountains screenshot (no glow) showing
+     nothing but indigo/violet above the ridge line. The repeated
+     --sky-bottom stop (45% and 100%) holds that vivid color flat for the
+     rest of the box, which is hidden behind the mountains anyway. */
   background: linear-gradient(
     180deg,
     var(--sky-top, var(--color-indigo-950)),
-    var(--sky-mid, var(--color-violet-800)) 55%,
-    var(--sky-bottom, var(--color-magenta-vivid-700))
+    var(--sky-mid, var(--color-violet-800)) 25%,
+    var(--sky-bottom, var(--color-magenta-vivid-700)) 45%,
+    var(--sky-bottom, var(--color-magenta-vivid-700)) 100%
   );
 }
 
@@ -64,16 +73,6 @@
   fill: var(--color-ink);
 }
 
-.wallpaper__clouds {
-  fill: var(--color-pearl);
-  opacity: 0.85;
-  filter: blur(2px);
-  /* Screen-blended, like the horizon glow and moon halo — normal alpha
-     compositing against the near-black mountain fill just muted the
-     color down to a gray smudge instead of a glowing cloud. */
-  mix-blend-mode: screen;
-}
-
 /* The moving celestial body — a reflecting glossy sphere, never a light
    source itself (§4 reserves that for the wordmark alone). Built as
    plain HTML/CSS rather than SVG: the mountain/star layers stretch
@@ -93,7 +92,12 @@
 
 .wallpaper__moon-halo {
   position: absolute;
-  inset: -35%;
+  /* Was inset:-35% + blur(14px) — combined, that pushed the halo's
+     visible extent to roughly 480-550px against a 281.6px disc (nearly
+     double), which meant a position check against the disc size alone
+     still looked "collided" on screen. Tightened so the halo stays
+     closer to the disc it belongs to. */
+  inset: -18%;
   border-radius: 50%;
   background: radial-gradient(
     closest-side,
@@ -101,7 +105,7 @@
     transparent 72%
   );
   opacity: var(--halo-opacity, 0.4);
-  filter: blur(14px);
+  filter: blur(9px);
   mix-blend-mode: screen;
 }
 

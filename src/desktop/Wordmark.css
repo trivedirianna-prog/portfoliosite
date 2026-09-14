@@ -30,19 +30,6 @@
   stroke-opacity: 0;
 }
 
-/* Fraunces italic instead of the script face for just this one letter —
-   see the component comment for why: the script's own capital R has no
-   alternate glyph and reads as "P" at a glance, and scaling it up only
-   made that worse. A clear serif italic capital paired with a flowing
-   script for the rest of the name is a standard convention, not a
-   mismatch. */
-.wordmark__cap {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: var(--weight-serif-semibold);
-  font-size: 1.15em;
-}
-
 /* The bloom layers — see Wordmark.tsx for how these are sized against
    the text's own rendered bounding box. Screen-blended so they add
    light onto the sky behind them instead of a flat, edge-visible tint

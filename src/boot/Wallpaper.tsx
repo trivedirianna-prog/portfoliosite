@@ -56,7 +56,6 @@ interface SceneConfig {
   farMountainTint: string;
   midMountainTint: string;
   nearMountainTint: string;
-  cloudColor: string;
   moonTop: number;
   moonLeft: number;
   moonLightColor: string;
@@ -104,41 +103,30 @@ function mixHex(a: string, b: string, t: number): string {
   return `rgb(${r}, ${g}, ${bl})`;
 }
 
-// Dense, individually-shaped pine silhouettes rather than a smooth ridge:
-// overlapping triangles with sine-jittered width/height/peak-offset so
-// neither their spacing nor their height reads as a uniform repeat.
-function buildPineTreelinePath(baseY: number, count: number, minH: number, maxH: number) {
-  const treeWidth = 100 / count;
-  let d = `M0,100 L0,${baseY.toFixed(2)}`;
-  for (let i = 0; i < count; i++) {
-    const xLeft = i * treeWidth;
-    const xRight = xLeft + treeWidth * 1.18;
-    const peakJitter = Math.sin(i * 2.3) * 0.15;
-    const xPeak = xLeft + treeWidth * (0.5 + peakJitter);
-    const heightJitter =
-      (Math.sin(i * 1.3) * 0.5 + Math.sin(i * 0.53 + 2) * 0.5 + 1) / 2;
-    const h = minH + (maxH - minH) * heightJitter;
-    d += ` L${xLeft.toFixed(2)},${baseY.toFixed(2)} L${xPeak.toFixed(2)},${(baseY - h).toFixed(2)} L${xRight.toFixed(2)},${baseY.toFixed(2)}`;
-  }
-  d += ` L100,${baseY.toFixed(2)} L100,100 Z`;
-  return d;
-}
-
 // Two prominent peaks framing a central V-shaped valley notch — angular
 // polyline (not smooth curves), so it reads as a mountain range rather
-// than a soft dune. Kept within the canvas's lower ~70% (apex at y=34)
-// so it never eats into the space reserved for the wordmark/objects above.
+// than a soft dune. Apex at y=40 (shifted down 6 from the previous y=34)
+// — extra headroom so more of the sky's now-earlier-arriving vivid color
+// (see Wallpaper.css) is visible above the ridge line, while still
+// staying within the canvas's lower ~60% so it never eats into the space
+// reserved for the wordmark/objects above.
 const MID_MOUNTAIN_PATH =
-  "M0,100 L0,64 L8,56 L16,40 L22,34 L28,46 L34,52 L40,58 L46,62 L50,66 " +
-  "L54,62 L60,58 L66,52 L72,46 L78,34 L84,40 L92,56 L100,64 L100,100 Z";
+  "M0,100 L0,70 L8,62 L16,46 L22,40 L28,52 L34,58 L40,64 L46,68 L50,72 " +
+  "L54,68 L60,64 L66,58 L72,52 L78,40 L84,46 L92,62 L100,70 L100,100 Z";
 
 // Distant, hazy, low-contrast — mostly hidden behind the mid layer's
-// peaks, but rises just enough at center to peek through the valley notch.
+// peaks, but rises just enough at center to peek through the valley
+// notch. Shifted down 5 to match the mid layer's lower peaks.
 const FAR_MOUNTAIN_PATH =
-  "M0,100 L0,86 C15,82 25,86 32,80 C38,72 44,60 50,52 C56,60 62,72 68,80 " +
-  "C75,86 85,82 100,86 L100,100 Z";
+  "M0,100 L0,91 C15,87 25,91 32,85 C38,77 44,65 50,57 C56,65 62,77 68,85 " +
+  "C75,91 85,87 100,91 L100,100 Z";
 
-const NEAR_TREELINE_PATH = buildPineTreelinePath(94, 46, 10, 20);
+// Frontmost, darkest layer — a plain, gently-undulating low ridge (no
+// trees, no clouds: both were cut entirely per this pass's Step 1). Kept
+// simple/smooth so it stays a quiet dark foundation, not a competing
+// silhouette detail of its own.
+const NEAR_MOUNTAIN_PATH =
+  "M0,100 L0,90 C20,87 35,91 50,88 C65,85 80,90 100,87 L100,100 Z";
 
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const indigo950 = getCssVar("--color-indigo-950");
@@ -152,7 +140,6 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const horizonGold = getCssVar("--color-horizon-gold");
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
-  const pearl = getCssVar("--color-pearl");
   const ink = getCssVar("--color-ink");
 
   // Every mountain layer's tint is a blend of THIS state's own horizon
@@ -188,15 +175,23 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       skyTop: indigo950,
       skyMid: violet600,
       horizonColor: duskHorizon,
-      horizonGlowOpacity: 1,
+      // Reduced from 1 — now that the sky itself carries real vividness
+      // up to the ridge line (Step 2), the glow is a contained accent at
+      // the valley seam, not the thing doing all the color work.
+      horizonGlowOpacity: 0.7,
       farMountainTint: duskTints.far,
       midMountainTint: duskTints.mid,
       nearMountainTint: duskTints.near,
-      cloudColor: mixHex(duskHorizon, pearl, 0.15),
-      // High and to the right, clear of the right peak (apex ~78,34) and
-      // the now much larger centered wordmark — the previous low
-      // near-the-ridge position collided with both once the mountain
-      // silhouette gained an actual peak there instead of a smooth wave.
+      // Checked against real bounding boxes (Phase A.5), not eyeballed:
+      // at 1280x800 the disc is 281.6px (radius 140.8px); the wordmark's
+      // own rect top edge sits at y=312.4px; the right peak's apex (now
+      // at 78%,40% after Step 2's height reduction) is at pixel
+      // (998.4, 320). Center (870, 160): disc bottom = 160+140.8 = 300.8,
+      // clearing the wordmark's 312.4 top edge by ~12px; distance to the
+      // peak apex is ~218px, clearing its 140.8px radius by ~78px. The
+      // softer halo (see .wallpaper__moon-halo) may still gently graze
+      // the wordmark's edge — that's an acceptable soft-glow overlap,
+      // not the hard disc-through-shape collision this is checked against.
       moonTop: 20,
       moonLeft: 68,
       // Dim / just becoming visible — a muted, low-contrast disc rather
@@ -212,12 +207,15 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       skyTop: indigo950,
       skyMid: violet800,
       horizonColor: nightHorizon,
-      horizonGlowOpacity: 0.5,
+      horizonGlowOpacity: 0.3,
       farMountainTint: nightTints.far,
       midMountainTint: nightTints.mid,
       nearMountainTint: nightTints.near,
-      cloudColor: mixHex(nightHorizon, pearl, 0.15),
-      // Clear of both peaks (apexes ~22,34 and ~78,34) and the wordmark.
+      // Center (486, 128): disc bottom = 128+140.8 = 268.8, clearing the
+      // wordmark's 312.4px top edge by ~44px; distance to the left peak
+      // apex (281.6, 320) is ~281px, clearing its 140.8px radius by
+      // ~140px — the most comfortable margin of the three, matching
+      // night's "clear, high in the sky" read.
       moonTop: 16,
       moonLeft: 38,
       moonLightColor: moonlight,
@@ -234,14 +232,15 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       skyTop: indigo950,
       skyMid: violet500,
       horizonColor: dawnHorizon,
-      horizonGlowOpacity: 0.85,
+      horizonGlowOpacity: 0.55,
       farMountainTint: dawnTints.far,
       midMountainTint: dawnTints.mid,
       nearMountainTint: dawnTints.near,
-      cloudColor: mixHex(dawnHorizon, pearl, 0.15),
-      // Left of center (mirroring dusk's rise-on-the-right), high enough
-      // to clear the left peak's apex (~22,34) instead of sitting right
-      // on top of it.
+      // Center (358, 144): disc bottom = 144+140.8 = 284.8, clearing the
+      // wordmark's 312.4px top edge by ~28px; distance to the left peak
+      // apex (281.6, 320) is ~192px, clearing its 140.8px radius by
+      // ~51px — the tightest of the three margins, but still a clean
+      // disc-vs-disc/peak clearance.
       moonTop: 18,
       moonLeft: 28,
       // Fading — cooler-meets-warmer transitional tone, still a solid,
@@ -274,8 +273,6 @@ export function Wallpaper() {
   const farRef = useRef<SVGPathElement>(null);
   const midRef = useRef<SVGPathElement>(null);
   const nearRef = useRef<SVGPathElement>(null);
-  const cloudsLeftRef = useRef<SVGGElement>(null);
-  const cloudsRightRef = useRef<SVGGElement>(null);
   const starsRef = useRef<SVGGElement>(null);
   const cycleIndexRef = useRef(0);
 
@@ -336,12 +333,6 @@ export function Wallpaper() {
       }
       if (nearRef.current) {
         tl.to(nearRef.current, { fill: scene.nearMountainTint, duration }, 0);
-      }
-      if (cloudsLeftRef.current) {
-        tl.to(cloudsLeftRef.current, { fill: scene.cloudColor, duration }, 0);
-      }
-      if (cloudsRightRef.current) {
-        tl.to(cloudsRightRef.current, { fill: scene.cloudColor, duration }, 0);
       }
       if (moonRef.current) {
         tl.to(
@@ -445,28 +436,21 @@ export function Wallpaper() {
         </defs>
 
         <g ref={horizonGlowGroupRef} className="wallpaper__horizon-glow">
-          <ellipse cx="50" cy="64" rx="46" ry="30" fill={`url(#${horizonGlowOuterId})`} />
-          <ellipse cx="50" cy="64" rx="24" ry="16" fill={`url(#${horizonGlowInnerId})`} />
+          {/* Narrowed from rx=46/24 (92%/48% of frame width) to rx=20/10
+              (40%/20%) — the wide version bled around the OUTER shoulders
+              of both peaks instead of staying contained in the central
+              valley notch (confirmed in the Phase B.3 isolation
+              screenshot). cy moved from 64 to 66 to sit at the new,
+              lower valley seam (peaks/valley shifted down 6 in Step 2). */}
+          <ellipse cx="50" cy="66" rx="20" ry="14" fill={`url(#${horizonGlowOuterId})`} />
+          <ellipse cx="50" cy="66" rx="10" ry="7" fill={`url(#${horizonGlowInnerId})`} />
         </g>
 
         <path ref={farRef} className="wallpaper__mountain" d={FAR_MOUNTAIN_PATH} />
 
         <path ref={midRef} className="wallpaper__mountain" d={MID_MOUNTAIN_PATH} />
 
-        {/* Small cloud clusters nestled at the base of each main peak,
-            picking up the horizon glow's color. */}
-        <g ref={cloudsLeftRef} className="wallpaper__clouds">
-          <ellipse cx="10" cy="49" rx="8" ry="4" />
-          <ellipse cx="19" cy="45" rx="9.5" ry="5" />
-          <ellipse cx="28" cy="50" rx="7" ry="3.5" />
-        </g>
-        <g ref={cloudsRightRef} className="wallpaper__clouds">
-          <ellipse cx="90" cy="49" rx="8" ry="4" />
-          <ellipse cx="81" cy="45" rx="9.5" ry="5" />
-          <ellipse cx="72" cy="50" rx="7" ry="3.5" />
-        </g>
-
-        <path ref={nearRef} className="wallpaper__mountain" d={NEAR_TREELINE_PATH} />
+        <path ref={nearRef} className="wallpaper__mountain" d={NEAR_MOUNTAIN_PATH} />
       </svg>
     </div>
   );
