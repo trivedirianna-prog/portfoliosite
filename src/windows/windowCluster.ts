@@ -25,7 +25,7 @@ export const CLUSTER_PRIMARY: { style: CSSProperties } = {
 };
 
 export const CLUSTER_EMPHASIS: { style: CSSProperties } = {
-  style: { left: "58%", top: "53%", width: "min(85vw, 420px)" },
+  style: { left: "58%", top: "53%", width: "min(78vw, 370px)" },
 };
 
 /*

@@ -86,6 +86,31 @@ export function About() {
         </svg>
       </button>
 
+      {/* Hidden discovery detail (§9): "Runner-Up, Rush Hour 5.0" lives here
+          as a quiet hover-only reveal — no click, no new window, just a
+          reward for noticing. Fades in/out with the object's own hover
+          state; aria-hidden since it has no keyboard-operable trigger. */}
+      <span className="section-object__discovery" aria-hidden="true">
+        <svg
+          className="section-object__discovery-medal"
+          viewBox="0 0 24 24"
+          role="presentation"
+        >
+          <path
+            className="discovery-medal__ribbon"
+            d="M8.5 11 L5.5 21.5 L12 17.5 L18.5 21.5 L15.5 11 Z"
+          />
+          <circle className="discovery-medal__disc" cx="12" cy="9" r="6.5" />
+          <path
+            className="discovery-medal__star"
+            d="M12 5.2 L13.1 7.6 L15.7 8 L13.8 9.8 L14.3 12.4 L12 11.1 L9.7 12.4 L10.2 9.8 L8.3 8 L10.9 7.6 Z"
+          />
+        </svg>
+        <span className="section-object__discovery-label label-mono">
+          Runner-Up, Rush Hour 5.0
+        </span>
+      </span>
+
       {content.isMinimized && (
         <button
           type="button"
