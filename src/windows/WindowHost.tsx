@@ -6,6 +6,7 @@ import { CommitteesWindow } from "../sections/Committees/CommitteesWindow";
 import { PortfolioWindow } from "../sections/Projects/PortfolioWindow";
 import { PandoraWindow } from "../sections/Projects/PandoraWindow";
 import { AgriVerseWindow } from "../sections/Projects/AgriVerseWindow";
+import { ContactWindow } from "../sections/Contact/ContactWindow";
 import { useWindowManager } from "./WindowManager";
 
 /*
@@ -26,6 +27,7 @@ const windowContentComponents: Record<string, ComponentType<{ windowId: string }
   "projects:portfolio": PortfolioWindow,
   "projects:pandora": PandoraWindow,
   "projects:agriverse": AgriVerseWindow,
+  "contact:default": ContactWindow,
 };
 
 export function WindowHost() {

@@ -1,0 +1,153 @@
+/* Contact's window is the site's one deliberately "glass" glossy surface
+   (§10) — softer, larger corner rounding than the shared window default
+   plus a thin bright edge, reading as a pane of curved glass rather than
+   solid plastic (Projects' three windows, by contrast, are all opaque). */
+.window.contact-window--shape {
+  border-radius: 28px;
+  outline: 1px solid rgba(255, 255, 255, 0.28);
+  outline-offset: -1px;
+}
+
+/* Same recipe as .material-glossy--translucent (materials.css) — window
+   content owns its own background per Window.tsx, so it's reproduced
+   directly here rather than applying that class to an element GSAP/
+   Draggable also manages. */
+.contact-window {
+  padding: var(--space-6);
+  background: color-mix(in srgb, var(--color-surface-glossy-flat) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.contact-window__intro {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-dark-dim);
+  margin: 0 0 var(--space-6);
+}
+
+.contact-window__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.contact-window__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.contact-window__field-label {
+  color: var(--color-accent-cool);
+}
+
+.contact-window__input {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--color-text-on-dark);
+  background: rgba(10, 3, 14, 0.28);
+  border: 1px solid var(--color-border-glossy-highlight);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  transition:
+    border-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+.contact-window__input::placeholder {
+  color: var(--color-text-on-dark-dim);
+}
+
+.contact-window__input:focus {
+  outline: none;
+  border-color: var(--color-ice-300);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ice-400) 30%, transparent);
+}
+
+.contact-window__input:disabled {
+  opacity: 0.6;
+}
+
+.contact-window__input--area {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.contact-window__submit {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-mono-label);
+  text-transform: uppercase;
+  color: var(--color-text-on-dark);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(0, 0, 0, 0.14)),
+    var(--color-ice-500);
+  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
+  transition:
+    transform var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
+}
+
+.contact-window__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    0 6px 16px rgba(10, 3, 14, 0.4);
+}
+
+.contact-window__submit:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.92);
+}
+
+.contact-window__submit:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.contact-window__notice {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.contact-window__notice--success {
+  color: var(--color-ice-300);
+}
+
+.contact-window__notice--error {
+  color: var(--color-magenta-300);
+}
+
+/* Footnote/signature block — direct contact info shown alongside the
+   form, not inside it: visually smaller/dimmer, set off by a thin
+   divider so it reads as a footnote rather than a fourth form field. */
+.contact-window__footnote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-glossy-highlight);
+}
+
+.contact-window__footnote-line {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: var(--tracking-mono-label);
+  color: var(--color-text-on-dark-dim);
+  text-decoration: none;
+}
+
+a.contact-window__footnote-line:hover {
+  color: var(--color-pearl);
+}

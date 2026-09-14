@@ -38,3 +38,21 @@
   fill: rgba(255, 255, 255, 0.25);
   mix-blend-mode: screen;
 }
+
+/* Press-to-send ping rings (§8.5) — outlined, not filled, so they read as
+   an expanding signal ring rather than a growing solid dot. Ice-toned to
+   match the device's cool accent; opacity/radius are driven entirely by
+   the GSAP timeline in Contact.tsx, this just sets the ring's look. */
+.contact-object__ping {
+  fill: none;
+  stroke: var(--color-ice-300);
+  stroke-width: 1.5;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* Tactile press feedback (§12), same pattern as every other section. */
+.section-object--contact .section-object__hit-area:active .section-object__art {
+  transform: scale(0.95);
+  transition-duration: 90ms;
+}
