@@ -1,8 +1,8 @@
 /*
-  Generic window chrome (§7.3). The body itself (children) is unstyled
-  here — .window only owns positioning/stacking/shadow and the floating
-  label+controls chip, which is what stays identical across every
-  window shape.
+  Generic window chrome (§7.3) — every window is this same rectangle
+  (gentle corner rounding, real box-shadow now that the outline is
+  actually a box) with a title bar spanning its top edge. See
+  Window.tsx for why the per-section-silhouette approach was reverted.
 */
 
 .window {
@@ -11,74 +11,159 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: var(--z-windows);
-  /* Shape-following shadow (irregular silhouettes, e.g. the journal,
-     wouldn't suit a rectangular box-shadow) — same non-inset layer
-     --shadow-window itself uses. */
-  filter: drop-shadow(0 24px 64px rgba(10, 3, 14, 0.6));
+  width: min(92vw, 460px);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-window);
 }
 
 .window--focused {
   z-index: var(--z-window-focused);
 }
 
-/* The one shared "lighting/glossiness" treatment every window uses
-   regardless of its own shape — same recipe as .material-glossy's own
-   flat-plastic + single sheen language (materials.css), applied here to
-   the label chip rather than to the (shape-variable) body underneath. */
-.window__chrome {
-  position: absolute;
-  top: calc(-1 * var(--space-8));
-  left: 50%;
-  transform: translateX(-50%);
+/* --- Title bar: shared layout, per-material paint --- */
+
+.window__titlebar {
+  flex-shrink: 0;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.1)),
-    var(--color-surface-glossy-flat);
-  box-shadow:
-    var(--shadow-object-resting),
-    inset 0 1px 0 var(--color-border-glossy-highlight);
-  white-space: nowrap;
-  transition: box-shadow var(--duration-standard) var(--ease-standard);
-}
-
-.window--focused .window__chrome {
-  box-shadow:
-    var(--shadow-object-lifted),
-    inset 0 1px 0 var(--color-border-glossy-highlight);
+  justify-content: space-between;
+  padding: 0 var(--space-2) 0 var(--space-4);
 }
 
 .window__label {
-  color: var(--color-text-on-dark);
+  letter-spacing: var(--tracking-mono-label);
+  text-transform: uppercase;
 }
 
 .window__controls {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
 }
 
+/* Real, easily-clickable buttons (28px) styled from the site's own
+   material system — not macOS traffic lights, not a default browser
+   button. Icon-only via inline SVG (a minus / an X), stroked with
+   currentColor so each material variant below just sets a color. */
 .window__control {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  padding: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.85), transparent 70%),
-    var(--color-chrome-300);
+  transition:
+    transform var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    background var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
 }
 
-.window__control--close {
-  background-color: var(--color-magenta-500);
+.window__control svg {
+  width: 12px;
+  height: 12px;
+  overflow: visible;
 }
 
-.window__control--minimize {
-  background-color: var(--color-ice-400);
+.window__control svg line {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
 }
+
+.window__control:hover {
+  transform: translateY(-1px);
+}
+
+.window__control:active {
+  transform: translateY(0);
+}
+
+/* --- Glossy family (Projects/Contact) --- */
+
+.window--glossy .window__titlebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.12)),
+    var(--color-surface-glossy-flat);
+  box-shadow:
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    inset 0 -10px 18px var(--color-border-glossy-shadow);
+}
+
+.window--glossy .window__label {
+  color: var(--color-text-on-dark);
+}
+
+.window--glossy .window__control {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
+    var(--color-surface-glossy-flat);
+  color: var(--color-chrome-100);
+  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
+}
+
+.window--glossy .window__control:hover {
+  box-shadow:
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    0 4px 10px rgba(10, 3, 14, 0.4);
+}
+
+.window--glossy .window__control--close:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
+    var(--color-magenta-600);
+  color: var(--color-pearl);
+}
+
+.window--glossy .window__control--minimize:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
+    var(--color-ice-500);
+  color: var(--color-pearl);
+}
+
+/* --- Paper family (About/Education/Committees) --- */
+
+.window--paper .window__titlebar {
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+  border-bottom: 1px solid var(--color-border-paper);
+}
+
+.window--paper .window__label {
+  color: var(--color-text-on-paper);
+}
+
+.window--paper .window__control {
+  background: var(--color-surface-paper-alt);
+  color: var(--color-text-on-paper-dim);
+  border: 1px solid var(--color-border-paper);
+}
+
+.window--paper .window__control:hover {
+  background: var(--color-pearl);
+  box-shadow: var(--shadow-object-resting);
+}
+
+.window--paper .window__control--close:hover {
+  color: var(--color-magenta-600);
+  border-color: var(--color-magenta-600);
+}
+
+.window--paper .window__control--minimize:hover {
+  color: var(--color-ice-500);
+  border-color: var(--color-ice-500);
+}
+
+/* --- Body --- */
 
 .window__body {
-  position: relative;
+  flex: 1;
+  overflow: auto;
 }

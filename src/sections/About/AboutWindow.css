@@ -1,51 +1,57 @@
-@import "./journalArt.css";
-
 .about-window {
   position: relative;
-  width: min(78vw, 380px);
-  height: min(78vw, 460px);
+  min-height: 260px;
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
 }
 
-.about-window__art {
+/* Spine stripe along the left edge — the journal cover's own color,
+   as surface decoration rather than a shape change. */
+.about-window__spine {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  /* Same shape-following drop-shadow language as .section-object__art —
-     this window's own silhouette, not a rectangular box-shadow. */
-  filter: drop-shadow(0 8px 24px rgba(20, 6, 24, 0.45));
+  inset: 0 auto 0 0;
+  width: 10px;
+  background: var(--color-plum-700);
 }
 
-/* Positioned over the page area of the art above (roughly x:30-70,
-   y:28-72 in that same 0-100 space, converted to % here since this sits
-   in a plain HTML box rather than the SVG's own coordinate system) —
-   kept clear of the ribbon (~x:60-86) and the cover's corner. */
+/* Small ribbon-tab accent tucked into the top edge, clear of the title
+   bar above and the content padding below. */
+.about-window__ribbon-tab {
+  position: absolute;
+  top: 0;
+  right: var(--space-8);
+  width: 16px;
+  height: 30px;
+  background: var(--color-magenta-600);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
+
 .about-window__content {
-  position: absolute;
-  top: 28%;
-  left: 33%;
-  width: 33%;
+  padding: var(--space-8) var(--space-6) var(--space-6) calc(var(--space-6) + 10px);
   color: var(--color-text-on-paper);
 }
 
 .about-window__placeholder-tag {
   color: var(--color-text-on-paper-dim);
-  font-size: 0.55rem;
-  margin: 0 0 var(--space-2);
+  font-size: 0.6rem;
+  margin: 0 0 var(--space-3);
 }
 
 .about-window__heading {
   font-family: var(--font-serif);
   font-weight: var(--weight-serif-semibold);
-  font-size: 1rem;
+  font-size: var(--text-heading-sm);
   line-height: var(--leading-heading);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-4);
 }
 
 .about-window__body-text {
   font-family: var(--font-serif);
-  font-size: 0.68rem;
+  font-size: var(--text-body);
   line-height: var(--leading-body);
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+
+.about-window__body-text:last-child {
+  margin-bottom: 0;
 }
