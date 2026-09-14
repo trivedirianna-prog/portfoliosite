@@ -52,3 +52,7 @@
   fill: rgba(255, 255, 255, 0.25);
   mix-blend-mode: screen;
 }
+.projects-object__lid-highlight {
+  fill: rgba(255, 255, 255, 0.3);
+  mix-blend-mode: screen;
+}
