@@ -19,9 +19,10 @@ import "./CommitteesWindow.css";
 
   §9's hidden discovery detail lives here too, same interaction pattern
   as About's ribbon (click to reveal/retract, not hover) but a different
-  visual: a small paper tag peeking out from behind/between the two main
-  cards (not a third equal card), which slides out further on click to
-  show "Member, Beats DJS".
+  visual: a small angled paper tag (light pink/magenta accent, real
+  hover-lift affordance) peeking out from behind/between the two main
+  cards — not a third equal card — which slides a matching tag out
+  beside the window on click.
 */
 export function CommitteesWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
@@ -35,10 +36,9 @@ export function CommitteesWindow({ windowId }: { windowId: string }) {
         style={{ left: "50%", top: "50%" }}
         aria-hidden={!beatsRevealed}
       >
-        <span className="committees-window__beats-kicker label-mono--bold">
-          Member
-        </span>
-        <p className="committees-window__beats-text">Beats DJS</p>
+        <p className="committees-window__beats-text">
+          a member of beats djs as well!
+        </p>
       </div>
 
       <Window

@@ -106,27 +106,50 @@
   margin: 0;
 }
 
-/* --- §9 discovery detail: "Member, Beats DJS" --- */
+/* --- §9 discovery detail: "a member of beats djs as well!" --- */
 
 /* The small peeking tag itself: a real <button>, positioned behind the
    seam between the two cards and mostly occluded by them (lower
    z-index) — only a small sliver pokes out above, reading as a third
    card corner glimpsed behind the two real ones, not an equal third
-   membership. */
+   membership.
+
+   A real silhouette, not a plain rectangle: the top-left corner is cut
+   off at an angle (clip-path), like a torn/angled paper tag, filled
+   with the light pink magenta-300 accent already used for the ACM
+   status callout above — the same accent family as the ribbon/pennant
+   treatment elsewhere, just a different shape/material for this
+   object's own "cards" language. The inset highlight gives it real
+   paper-catching-light depth instead of reading as a flat placeholder.
+   Hover lifts it (same affordance language as the dock tabs and desktop
+   objects elsewhere) so it's discoverable as clickable without being
+   told — cursor:pointer alone wasn't a strong enough signal on its own. */
 .committees-window__beats-peek {
   position: absolute;
   z-index: 0;
-  top: -14px;
+  top: -20px;
   left: 50%;
-  width: 46px;
-  height: 60px;
+  width: 52px;
+  height: 66px;
   padding: 0;
-  border: 1px solid var(--color-border-paper);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-paper-alt);
-  box-shadow: var(--shadow-object-resting);
+  border: 1px solid color-mix(in srgb, var(--color-magenta-600) 35%, transparent);
+  clip-path: polygon(22% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 22%);
+  background: linear-gradient(
+    160deg,
+    var(--color-magenta-300),
+    color-mix(in srgb, var(--color-magenta-300) 75%, var(--color-magenta-400) 25%)
+  );
+  box-shadow: var(--shadow-object-resting), inset 0 1px 0 rgba(255, 255, 255, 0.55);
   transform: translateX(-50%) rotate(4deg);
   cursor: pointer;
+  transition:
+    transform var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
+}
+
+.committees-window__beats-peek:hover {
+  transform: translateX(-50%) translateY(-4px) rotate(4deg);
+  box-shadow: var(--shadow-object-lifted), inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .committees-window__beats-peek:focus-visible {
@@ -149,8 +172,12 @@
   z-index: var(--z-windows);
   width: 150px;
   padding: var(--space-4) var(--space-5);
-  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
-  border: 1px solid var(--color-border-paper);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-magenta-300) 35%, var(--color-surface-paper)),
+    var(--color-surface-paper-alt)
+  );
+  border: 1px solid color-mix(in srgb, var(--color-magenta-600) 25%, var(--color-border-paper));
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-window);
   opacity: 0;
@@ -166,16 +193,11 @@
   transform: translate(calc(-50% - 471px), -50%) rotate(-2deg);
 }
 
-.committees-window__beats-kicker {
-  display: block;
-  color: var(--color-magenta-600);
-  margin: 0 0 var(--space-1);
-}
-
 .committees-window__beats-text {
   font-family: var(--font-serif);
-  font-weight: var(--weight-serif-semibold);
-  font-size: 1rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: var(--leading-body);
   color: var(--color-text-on-paper);
   margin: 0;
 }
