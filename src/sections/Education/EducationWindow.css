@@ -1,5 +1,15 @@
 .education-window {
   position: relative;
+  /* Bottom padding lives here, not as the record block's own bottom
+     margin below — this element is the one with the paper background,
+     and a plain block's height:auto excludes a child's margin once it
+     collapses through to the parent's own (border/padding-less) edge.
+     That collapsed-through margin was rendering as a real, unfilled
+     transparent gap below the record (the window/body frame extending
+     past it), since the escaped space landed outside this background.
+     Padding can't collapse/escape the same way, so it always stays
+     inside the painted area. */
+  padding-bottom: var(--space-8);
   background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
 }
 
@@ -63,7 +73,7 @@
 
 .education-window__record {
   position: relative;
-  margin: var(--space-8) var(--space-8) var(--space-8);
+  margin: var(--space-8) var(--space-8) 0;
   padding: var(--space-8) var(--space-8) var(--space-6);
   background: var(--color-surface-paper-alt);
   border-top: 1px dashed var(--color-border-paper);
