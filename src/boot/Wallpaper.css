@@ -96,17 +96,11 @@
    per-state "more present at dusk/dawn, more subdued at night" dial) is
    tweened directly via GSAP rather than a CSS custom property. */
 
-/* Fill is tweened directly (flat, no gradient — see rockTint), but the
-   thin edge highlight along the rock strip's own top boundary lives here:
-   a stroke (also tweened, via scene.rockHighlight) is what makes the seam
-   against the mountain above legible even where the two fill colors sit
-   close in value. Small stroke-width so it reads as a rim, not an outline
-   around the whole shape. */
-.wallpaper__rocks {
-  stroke-width: 0.5;
-  stroke-opacity: 0.6;
-  stroke-linejoin: round;
-}
+/* .wallpaper__rocks carries no rule here — fill is tweened directly
+   (flat, no gradient — see rockTint) with no stroke/highlight of any
+   kind (an earlier pass added a seam-highlight stroke; removed per
+   direction — the value contrast between rockTint and the near
+   mountain's own bottom shade is the only distinction now). */
 
 /* The moving celestial body — a reflecting glossy sphere, never a light
    source itself (§4 reserves that for the wordmark alone). Built as

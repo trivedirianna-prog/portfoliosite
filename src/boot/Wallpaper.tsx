@@ -74,7 +74,6 @@ interface SceneConfig {
    *  ORIGINAL flat-fill silhouette language, before Step 3 added
    *  internal shading to the mountains themselves). */
   rockTint: string;
-  rockHighlight: string;
   /** Solid, crisply-edged cloud clusters beside the two peaks (not a
    *  blurred atmosphere blend) — see CLOUD_SHAPE_PATH. Each cloud gets
    *  the same top/bottom shading treatment as the mountains. */
@@ -162,22 +161,40 @@ const FAR_MOUNTAIN_PATH =
 const NEAR_MOUNTAIN_PATH =
   "M0,100 L0,88 C15,84 25,90 38,85 C50,80 62,88 75,83 C85,80 92,86 100,84 L100,100 Z";
 
+// A crisp four-pointed sparkle silhouette (the classic "twinkle" shape:
+// thin elongated points radiating from a pinched center), not a circular
+// blur. Centered at (0,0), points reaching to +/-1 on each axis, with
+// control points pulled in tight to near-origin (+/-0.18) so the waist
+// between points pinches sharply rather than bowing outward into a
+// four-lobed blob — that pinch is what reads as "sparkle icon" rather
+// than "soft plus sign." Positioned/sized per star via a wrapping
+// <g transform="translate(...) scale(...)">, same technique as the cloud
+// puffs above.
+const STAR_SPARKLE_PATH =
+  "M0,-1 C0.18,-0.18 0.18,-0.18 1,0 C0.18,0.18 0.18,0.18 0,1 " +
+  "C-0.18,0.18 -0.18,0.18 -1,0 C-0.18,-0.18 -0.18,-0.18 0,-1 Z";
+
 // A dark foreground strip below the near mountain — separate silhouette,
 // not a fix baked into the near layer itself, per the explicit "add a
 // rock/boulder or uneven terrain layer" direction.
 //
-// Was "M0,100 L0,96 C6,94 10,97 16,95 ... " — a top edge wandering only
-// y=93 to y=97 (4% of the frame) in smooth, near-mountain-style curves.
-// At full-frame view that read as "one flat dark curve with no
-// distinguishable second layer": too shallow to register as its own
-// shape, and (per rockTint above) too close in color to the near layer's
-// own bottom edge to read as a seam either. Widened to an 86-99 range
-// (13%) with sharper, uneven bump heights (unlike the mountains' broad
-// even curves) so it reads as jagged boulders/rocks, not another ridge.
+// Went through two prior versions: first a smooth 4%-range curve (too
+// shallow to register as its own shape at all), then a sharp, many-bump
+// jagged silhouette (overcorrected — read as spiky rather than "rocky").
+// This version splits the difference: a handful of broad, gentle bumps
+// (top edge wandering y=82-90, calmer than the jagged version but still
+// clearly uneven, never a dead-straight line — and its highest points
+// stay 2 units below the near mountain's own highest points at y=80, so
+// it never pokes above the silhouette in front of which it sits) and —
+// the main change — a much taller overall band (top edge averaging ~86
+// vs. the previous ~92) so it actually fills the lower frame instead of
+// reading as a thin trim. Contrast against the near mountain comes from
+// rockTint's own value step alone now — no highlight stroke/seam line
+// (removed; it read as an artificial outline rather than a natural
+// boundary).
 const ROCK_PATH =
-  "M0,100 L0,97 C4,94 7,98 11,96 C14,89 18,94 21,97 C25,93 29,98 33,95 " +
-  "C37,90 41,96 45,98 C50,93 54,97 58,94 C62,98 66,92 70,96 " +
-  "C74,99 78,94 82,97 C86,90 90,96 94,98 C97,94 99,97 100,96 L100,100 Z";
+  "M0,100 L0,88 C15,84 28,90 42,86 C55,82 68,88 82,85 " +
+  "C90,83 95,87 100,85 L100,100 Z";
 
 // One puffy cloud silhouette, built like the old pine treeline was —
 // several overlapping rounded bumps merging into one shape via cubic
@@ -273,14 +290,6 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   // — no internal gradient, unlike the shaded mountains above it.
   function rockTint(nearBottomColor: string) {
     return mixHex(nearBottomColor, ink, 0.55);
-  }
-
-  // A thin, subtle highlight along the rock strip's own top edge (see
-  // .wallpaper__rocks stroke in Wallpaper.css) — a lighter tint than the
-  // rock fill itself, giving the seam against the mountain above it a
-  // visible edge rather than relying on fill-color contrast alone.
-  function rockHighlight(horizon: string) {
-    return mixHex(horizon, pearl, 0.25);
   }
 
   // Shades a flat tint into a top (ridge)/bottom (base) pair for the
@@ -391,7 +400,6 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       nearMountainTop: duskShades.near.top,
       nearMountainBottom: duskShades.near.bottom,
       rockTint: rockTint(duskShades.near.bottom),
-      rockHighlight: rockHighlight(duskHorizon),
       cloudTop: duskCloudShade.top,
       cloudBottom: duskCloudShade.bottom,
       // Most present at dusk — warm, golden-lit clouds catching the last
@@ -431,7 +439,6 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       nearMountainTop: nightShades.near.top,
       nearMountainBottom: nightShades.near.bottom,
       rockTint: rockTint(nightShades.near.bottom),
-      rockHighlight: rockHighlight(nightHorizon),
       cloudTop: nightCloudShade.top,
       cloudBottom: nightCloudShade.bottom,
       // Most subdued — dim, barely-lit silhouettes that don't compete
@@ -467,7 +474,6 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       nearMountainTop: dawnShades.near.top,
       nearMountainBottom: dawnShades.near.bottom,
       rockTint: rockTint(dawnShades.near.bottom),
-      rockHighlight: rockHighlight(dawnHorizon),
       cloudTop: dawnCloudShade.top,
       cloudBottom: dawnCloudShade.bottom,
       // Present, cooler-lit than dusk's golden version — per "more
@@ -621,11 +627,7 @@ export function Wallpaper() {
         );
       }
       if (rockRef.current) {
-        tl.to(
-          rockRef.current,
-          { fill: scene.rockTint, stroke: scene.rockHighlight, duration },
-          0,
-        );
+        tl.to(rockRef.current, { fill: scene.rockTint, duration }, 0);
       }
       if (cloudTopStopRef.current) {
         tl.to(
@@ -680,13 +682,43 @@ export function Wallpaper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Was 6 points — read as sparse even at night's full opacity. Expanded
+  // to ~28, spread across the upper ~35% of the frame (clear of the
+  // mountain ridge line, which starts at y=40 at its highest). Per-state
+  // density still comes from starOpacity dimming this SAME set (dusk/dawn
+  // stay "noticeably lower than night" via that existing per-state dial,
+  // not a separate smaller point list) — scale varies per star so the
+  // field has real depth (a few bigger/brighter "key" stars among many
+  // smaller ones) rather than uniform dots.
   const starPoints = [
-    { cx: 8, cy: 15 },
-    { cx: 22, cy: 8 },
-    { cx: 40, cy: 20 },
-    { cx: 60, cy: 10 },
-    { cx: 75, cy: 25 },
-    { cx: 90, cy: 14 },
+    { cx: 4, cy: 10, scale: 1.1 },
+    { cx: 9, cy: 22, scale: 0.7 },
+    { cx: 14, cy: 6, scale: 0.9 },
+    { cx: 19, cy: 16, scale: 1.3 },
+    { cx: 25, cy: 28, scale: 0.6 },
+    { cx: 30, cy: 9, scale: 0.8 },
+    { cx: 36, cy: 19, scale: 1.0 },
+    { cx: 41, cy: 4, scale: 0.7 },
+    { cx: 47, cy: 24, scale: 0.9 },
+    { cx: 52, cy: 12, scale: 1.2 },
+    { cx: 58, cy: 30, scale: 0.6 },
+    { cx: 63, cy: 7, scale: 1.0 },
+    { cx: 68, cy: 20, scale: 0.8 },
+    { cx: 73, cy: 32, scale: 0.7 },
+    { cx: 77, cy: 14, scale: 1.1 },
+    { cx: 82, cy: 25, scale: 0.9 },
+    { cx: 87, cy: 5, scale: 0.6 },
+    { cx: 91, cy: 17, scale: 1.3 },
+    { cx: 95, cy: 27, scale: 0.8 },
+    { cx: 2, cy: 30, scale: 0.7 },
+    { cx: 12, cy: 33, scale: 0.6 },
+    { cx: 22, cy: 3, scale: 0.9 },
+    { cx: 33, cy: 34, scale: 0.7 },
+    { cx: 44, cy: 15, scale: 0.6 },
+    { cx: 55, cy: 3, scale: 0.8 },
+    { cx: 65, cy: 35, scale: 0.6 },
+    { cx: 85, cy: 33, scale: 0.7 },
+    { cx: 98, cy: 11, scale: 0.9 },
   ];
 
   return (
@@ -699,6 +731,12 @@ export function Wallpaper() {
         preserveAspectRatio="none"
       >
         <defs>
+          {/* Only for the tiny core bleed behind each sparkle now — was
+              previously the star's ENTIRE visible shape (a soft circular
+              blob), which is exactly the "glow blob, not a sparkle point"
+              complaint. Kept small/tight underneath the crisp sparkle
+              path below rather than removed outright, since "a very tight
+              bright core glow at the center is fine." */}
           <radialGradient id={starGlowId} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
             <stop offset="45%" stopColor="#ffffff" stopOpacity="0.35" />
@@ -707,9 +745,12 @@ export function Wallpaper() {
         </defs>
         <g ref={starsRef} className="wallpaper__stars">
           {starPoints.map((p) => (
-            <g key={`${p.cx}-${p.cy}`}>
-              <circle cx={p.cx} cy={p.cy} r="1.3" fill={`url(#${starGlowId})`} />
-              <circle cx={p.cx} cy={p.cy} r="0.28" fill="#ffffff" />
+            <g
+              key={`${p.cx}-${p.cy}`}
+              transform={`translate(${p.cx}, ${p.cy}) scale(${p.scale})`}
+            >
+              <circle r="0.45" fill={`url(#${starGlowId})`} />
+              <path d={STAR_SPARKLE_PATH} fill="#ffffff" />
             </g>
           ))}
         </g>
