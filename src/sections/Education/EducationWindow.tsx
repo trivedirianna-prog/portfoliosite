@@ -8,6 +8,11 @@ import "./EducationWindow.css";
   bar/button chrome, same emerge-from/retract-to-the-card motion via
   originRect (see WindowManager.originRects, keyed by "education").
 
+  Wider than the shared 460px default (min(90vw, 600px)) — this is meant
+  to read as a substantial document, not a compact card; EducationWindow.css
+  carries the matching larger padding/spacing/type scale so the extra
+  size reads as room to breathe, not empty margin.
+
   Content is two deliberately different registers, per direction:
 
   1. HEADLINE — the current degree, largest/primary content. GPA and
@@ -35,6 +40,7 @@ export function EducationWindow({ windowId }: { windowId: string }) {
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
       originRect={originRects.education ?? null}
+      style={{ width: "min(90vw, 600px)" }}
     >
       <div className="education-window">
         <div className="education-window__headline">

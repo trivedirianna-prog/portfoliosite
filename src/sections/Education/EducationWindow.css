@@ -3,41 +3,45 @@
   background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
 }
 
-/* --- Headline block: current degree, the clear primary content --- */
+/* --- Headline block: current degree, the clear primary content ---
+   Sized/spaced for the window's larger 600px-default footprint (see
+   EducationWindow.tsx) — padding and type scale both stepped up from
+   the original compact-card version so the extra room reads as
+   intentional breathing space, not leftover empty margin. */
 
 .education-window__headline {
-  padding: var(--space-8) var(--space-6) var(--space-6);
+  padding: var(--space-12) var(--space-8) var(--space-8);
 }
 
 .education-window__degree {
   font-family: var(--font-serif);
   font-weight: var(--weight-serif-semibold);
-  font-size: var(--text-heading-sm);
+  font-size: 1.85rem;
   line-height: var(--leading-heading);
   color: var(--color-text-on-paper);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-3);
 }
 
 .education-window__school {
   font-family: var(--font-serif);
-  font-size: var(--text-body);
+  font-size: 1.2rem;
   line-height: var(--leading-body);
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
 }
 
 .education-window__years {
   font-family: var(--font-serif);
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-6);
 }
 
 .education-window__stat {
   font-family: var(--font-serif);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
 }
 
 .education-window__stat strong {
@@ -52,12 +56,15 @@
 /* --- Supporting record: pre-college history, styled as a stamped/
    annotated slip rather than plain bullets — a dashed attach-line, a
    slight rotation like a pinned card, and a stamp graphic reusing the
-   desktop icon's own ring+dot motif (Education.tsx). --- */
+   desktop icon's own ring+dot motif (Education.tsx). The gap around the
+   dashed divider is deliberately generous now (headline's own bottom
+   margin plus this block's top margin) — it needs real air between the
+   two registers, not just a hairline rule. --- */
 
 .education-window__record {
   position: relative;
-  margin: 0 var(--space-6) var(--space-6);
-  padding: var(--space-5) var(--space-6) var(--space-4);
+  margin: var(--space-8) var(--space-8) var(--space-8);
+  padding: var(--space-8) var(--space-8) var(--space-6);
   background: var(--color-surface-paper-alt);
   border-top: 1px dashed var(--color-border-paper);
   transform: rotate(-1deg);
@@ -87,8 +94,9 @@
 
 .education-window__record-label {
   display: block;
+  font-size: 0.78rem;
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4);
 }
 
 .education-window__record-row {
@@ -96,7 +104,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-2) 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px dotted var(--color-border-paper);
 }
 
@@ -105,13 +113,14 @@
 }
 
 .education-window__record-key {
+  font-size: 0.78rem;
   color: var(--color-text-on-paper-dim);
 }
 
 .education-window__record-value {
   font-family: var(--font-serif);
   font-weight: var(--weight-serif-semibold);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--color-text-on-paper);
 }
 
@@ -119,15 +128,15 @@
    so it gets slightly more visual weight — a hand-circled mark (like a
    grader's pen), magenta-600, a touch larger than the other two values. */
 .education-window__record-row--cet {
-  padding-top: var(--space-3);
+  padding-top: var(--space-4);
 }
 
 .education-window__record-value--cet {
   display: inline-block;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   color: var(--color-magenta-600);
   border: 2px solid var(--color-magenta-600);
   border-radius: 999px;
-  padding: 1px var(--space-3);
+  padding: 2px var(--space-4);
   transform: rotate(-3deg);
 }
