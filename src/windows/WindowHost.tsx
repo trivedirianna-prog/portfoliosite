@@ -3,6 +3,9 @@ import { AboutWindow } from "../sections/About/AboutWindow";
 import { AboutPhotoWindow } from "../sections/About/AboutPhotoWindow";
 import { EducationWindow } from "../sections/Education/EducationWindow";
 import { CommitteesWindow } from "../sections/Committees/CommitteesWindow";
+import { PortfolioWindow } from "../sections/Projects/PortfolioWindow";
+import { PandoraWindow } from "../sections/Projects/PandoraWindow";
+import { AgriVerseWindow } from "../sections/Projects/AgriVerseWindow";
 import { useWindowManager } from "./WindowManager";
 
 /*
@@ -20,6 +23,9 @@ const windowContentComponents: Record<string, ComponentType<{ windowId: string }
   "about:photo": AboutPhotoWindow,
   "education:default": EducationWindow,
   "committees:default": CommitteesWindow,
+  "projects:portfolio": PortfolioWindow,
+  "projects:pandora": PandoraWindow,
+  "projects:agriverse": AgriVerseWindow,
 };
 
 export function WindowHost() {

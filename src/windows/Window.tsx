@@ -1,19 +1,23 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
-import { gsap } from "../lib/gsap";
+import { gsap, Draggable } from "../lib/gsap";
 import type { OriginRect } from "./types";
 import "./Window.css";
 
 /*
   Generic window chrome (§7.3). Every window is a plain rectangle
   (gentle corner rounding only) with a real title bar spanning its top
-  edge — no per-section silhouette here.
+  edge — no per-section silhouette here by default; a window CAN add its
+  own outer silhouette via `className` (e.g. Projects' three windows
+  each needing a genuinely different shape/silhouette per §8.3, while
+  still sharing this exact title bar/button chrome underneath).
 
   First attempt reused each object's own tiny icon silhouette (e.g. the
   journal's page/ribbon outline) scaled up as the entire window shape.
   That read as unreadable at window scale and overlapped neighboring
-  desktop elements. Reverted per direction: every window, across every
-  section, is this same rectangle; sections differentiate through
-  content/material/color inside it, never through the outline.
+  desktop elements. Reverted per direction: every window's BASE shape is
+  this same rectangle; sections differentiate through content/material/
+  color (and now, optionally, an outer silhouette tweak) rather than a
+  wholesale shape swap.
 
   `material` picks which of the two established chrome recipes the
   title bar uses — glossy (Projects/Contact) or paper (About/Education/
@@ -44,6 +48,18 @@ import "./Window.css";
   touched" motion principle. Without an originRect, open/close are
   instant, same as before — this is additive, not a requirement every
   caller has to satisfy.
+
+  §7.2 dragging: every window is draggable by its title bar (GSAP
+  Draggable), session-only — there is no persisted position anywhere, so
+  a fresh open/restore always starts back at its designed spot rather
+  than remembering where it was last dragged. The open/close tweens
+  above used to `clearProps` the transform back to plain CSS once
+  settled; that's removed now, since dragging needs GSAP to keep owning
+  this element's transform continuously from mount (a `.to()` tween or a
+  Draggable instance both need to read the CURRENT tracked x/y, which is
+  only reliable if GSAP never hands control back to a bare CSS rule
+  mid-lifetime) — the settled values are visually identical to the old
+  CSS rule either way, so nothing looks different at rest.
 */
 
 interface WindowProps {
@@ -54,6 +70,12 @@ interface WindowProps {
    *  photo window vs. its text window, §8.1), independent of z-order/
    *  focus. */
   emphasis?: boolean;
+  /** Extra class(es) on the root `.window` element — for a window that
+   *  needs its own outer silhouette (border-radius/clip-path/accent
+   *  border) on top of the shared rectangle base, e.g. Projects' three
+   *  distinctly-shaped windows (§8.3). Never touches the title bar/
+   *  button chrome, which stays identical regardless. */
+  className?: string;
   focused: boolean;
   onFocus: () => void;
   onClose: () => void;
@@ -90,6 +112,7 @@ export function Window({
   title,
   material,
   emphasis = false,
+  className,
   focused,
   onFocus,
   onClose,
@@ -101,37 +124,59 @@ export function Window({
   children,
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const titlebarRef = useRef<HTMLDivElement>(null);
 
   // Runs once per mount — every fresh open AND every restore-from-minimize
   // is a fresh mount (WindowHost only renders "open" windows), so this
-  // naturally replays on both, not just the very first open.
+  // naturally replays on both, not just the very first open. Also where
+  // dragging gets wired up, since it needs the same continuously-GSAP-
+  // owned transform the open/close tweens rely on.
   useLayoutEffect(() => {
     const el = rootRef.current;
-    if (!el || !originRect) return;
+    if (!el) return;
 
-    const rect = el.getBoundingClientRect();
-    const dx = originRect.x + originRect.width / 2 - (rect.x + rect.width / 2);
-    const dy = originRect.y + originRect.height / 2 - (rect.y + rect.height / 2);
-    const startScale = Math.max(
-      0.2,
-      Math.min(originRect.width / rect.width, originRect.height / rect.height),
-    );
+    if (originRect) {
+      const rect = el.getBoundingClientRect();
+      const dx = originRect.x + originRect.width / 2 - (rect.x + rect.width / 2);
+      const dy = originRect.y + originRect.height / 2 - (rect.y + rect.height / 2);
+      const startScale = Math.max(
+        0.2,
+        Math.min(originRect.width / rect.width, originRect.height / rect.height),
+      );
 
-    gsap.fromTo(
-      el,
-      { xPercent: -50, yPercent: -50, x: dx, y: dy, scale: startScale, opacity: 0 },
-      {
-        xPercent: -50,
-        yPercent: -50,
-        x: 0,
-        y: 0,
-        scale: 1,
-        opacity: 1,
-        duration: OPEN_DURATION,
-        ease: "power2.out",
-        clearProps: "transform,opacity",
-      },
-    );
+      gsap.fromTo(
+        el,
+        { xPercent: -50, yPercent: -50, x: dx, y: dy, scale: startScale, opacity: 0 },
+        {
+          xPercent: -50,
+          yPercent: -50,
+          x: 0,
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: OPEN_DURATION,
+          ease: "power2.out",
+        },
+      );
+    } else {
+      // No emerge animation to establish GSAP's ownership of this
+      // element's transform — set the same resting values a plain
+      // `gsap.set` (not a tween) that Draggable below still needs to
+      // track x/y reliably from a known baseline.
+      gsap.set(el, { xPercent: -50, yPercent: -50, x: 0, y: 0 });
+    }
+
+    const [draggable] = titlebarRef.current
+      ? Draggable.create(el, {
+          type: "x,y",
+          trigger: titlebarRef.current,
+          allowContextMenu: true,
+        })
+      : [];
+
+    return () => {
+      draggable?.kill();
+    };
     // Intentionally run once per mount only (see comment above) — a fresh
     // originRect on a later render must not replay the animation on an
     // already-open, already-settled window.
@@ -148,6 +193,10 @@ export function Window({
     }
 
     const rect = el.getBoundingClientRect();
+    // Relative deltas (not absolute x/y targets) — the window may have
+    // been dragged since it opened, so "how far from HERE to the icon"
+    // is what matters, not a value computed as if it were still resting
+    // at its original undragged position.
     const dx = originRect.x + originRect.width / 2 - (rect.x + rect.width / 2);
     const dy = originRect.y + originRect.height / 2 - (rect.y + rect.height / 2);
     const endScale = Math.max(
@@ -155,31 +204,27 @@ export function Window({
       Math.min(originRect.width / rect.width, originRect.height / rect.height),
     );
 
-    gsap.fromTo(
-      el,
-      { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 1, opacity: 1 },
-      {
-        xPercent: -50,
-        yPercent: -50,
-        x: dx,
-        y: dy,
-        scale: endScale,
-        opacity: 0,
-        duration: CLOSE_DURATION,
-        ease: "power1.in",
-        onComplete: onClose,
-      },
-    );
+    gsap.to(el, {
+      xPercent: -50,
+      yPercent: -50,
+      x: `+=${dx}`,
+      y: `+=${dy}`,
+      scale: endScale,
+      opacity: 0,
+      duration: CLOSE_DURATION,
+      ease: "power1.in",
+      onComplete: onClose,
+    });
   }
 
   return (
     <div
       ref={rootRef}
-      className={`window window--${material}${emphasis ? " window--emphasis" : ""}${focused ? " window--focused" : ""}`}
+      className={`window window--${material}${emphasis ? " window--emphasis" : ""}${focused ? " window--focused" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       onPointerDown={onFocus}
     >
-      <div className="window__titlebar">
+      <div className="window__titlebar" ref={titlebarRef}>
         <span className="window__label label-mono">{title}</span>
         <div className="window__controls">
           {extraControl && (

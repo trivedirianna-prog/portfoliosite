@@ -111,7 +111,9 @@
    A section that spawns more than one window at once (About, §8.1) gets
    more than one of these simultaneously — .section-object__dock-tab--
    secondary mirrors the position to the opposite corner so two tabs
-   never overlap each other. */
+   never overlap each other; --tertiary (Projects, §8.3, up to three at
+   once) sits at the right-middle edge, clear of both top corners and
+   the caption below. */
 .section-object__dock-tab {
   position: absolute;
   top: -6px;
@@ -145,4 +147,14 @@
   top: -6px;
   right: auto;
   left: -10px;
+}
+
+.section-object__dock-tab--tertiary {
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+}
+
+.section-object__dock-tab--tertiary:hover {
+  transform: translateY(-50%) translateY(-2px);
 }

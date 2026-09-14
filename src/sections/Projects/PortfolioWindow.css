@@ -1,0 +1,58 @@
+/* Sharper-cornered than the shared window default (radius-lg) — the
+   "plainest, least abstract" of the three, reading almost like a
+   literal browser window rather than a designed artifact. Two classes
+   combined (base .window + this one) for specificity, since both are
+   single-class selectors and load order between files isn't something
+   to depend on. */
+.window.portfolio-window--shape {
+  border-radius: var(--radius-sm);
+}
+
+.portfolio-window {
+  background: linear-gradient(180deg, var(--color-plum-800), var(--color-plum-900));
+}
+
+.portfolio-window__screenshot {
+  display: block;
+  width: 100%;
+  border-bottom: 1px solid var(--color-border-glossy-shadow);
+}
+
+.portfolio-window__content {
+  padding: var(--space-6);
+}
+
+.portfolio-window__title {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: 1.3rem;
+  color: var(--color-text-on-dark);
+  margin: 0 0 var(--space-2);
+}
+
+.portfolio-window__description {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--color-text-on-dark);
+  margin: 0 0 var(--space-2);
+}
+
+.portfolio-window__meta {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-dark-dim);
+  margin: 0 0 var(--space-4);
+}
+
+.portfolio-window__link {
+  display: inline-block;
+  color: var(--color-accent-cool);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent-cool) 50%, transparent);
+}
+
+.portfolio-window__link:hover {
+  color: var(--color-pearl);
+  border-bottom-color: var(--color-pearl);
+}

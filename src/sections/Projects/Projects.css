@@ -1,5 +1,40 @@
 @import "../sectionObject.css";
 
+/* Brief, subtle press-down feedback on click (matching every other
+   section's §9 motion refinement), scoped to Projects only. */
+.section-object--projects .section-object__hit-area:active .section-object__art {
+  transform: scale(0.95);
+  transition-duration: 90ms;
+}
+
+/* §8.3's light-split streaks — the physical justification for the
+   fan-out. Kept to the locked palette (pearl/ice/magenta) rather than an
+   invented rainbow hue; screen-blended and softly blurred so each reads
+   as a glint of light rather than a drawn line. Sits at opacity 0 at
+   rest, flashed briefly by the open timeline (Projects.tsx). */
+.projects-object__light-split {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.projects-object__split {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: blur(0.4px);
+}
+
+.projects-object__split--a {
+  stroke: var(--color-pearl);
+}
+
+.projects-object__split--b {
+  stroke: var(--color-ice-300);
+}
+
+.projects-object__split--c {
+  stroke: var(--color-magenta-300);
+}
+
 /* Glossy recipe, warm: case body plum-700 -> magenta-600 (the richest,
    most saturated surface, since it's the front-facing hero plane); lid
    a darker/muted plum-800 -> plum-600 so the open flap reads as a

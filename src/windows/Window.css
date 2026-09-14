@@ -48,6 +48,11 @@
      the content, not fused flat against it. */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  /* §7.2 — the title bar is the drag handle (GSAP Draggable, see
+     Window.tsx); "grab" signals that before a drag starts. Draggable
+     swaps this to "grabbing" for the duration of an active drag on its
+     own. */
+  cursor: grab;
 }
 
 .window__label {
