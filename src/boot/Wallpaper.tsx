@@ -188,21 +188,30 @@ const STAR_SPARKLE_PATH =
 // the same cubic-bezier-dome technique as CLOUD_SHAPE_PATH below (each
 // bump: a C curve up to a flat-ish peak, a second C curve back down),
 // rather than sharp L vertices — so it reads as "a sea of clouds the
-// mountains rise above" rather than another rocky ridge. Same top-edge
-// range as the jagged version before it (y=82-90, staying below the near
-// mountain's own highest points at y=80) and same overall coverage/
-// height — only the silhouette construction changed. Edges stay
+// mountains rise above" rather than another rocky ridge.
+//
+// First cloud-bank version used 7 evenly-sized, evenly-spaced bumps
+// (~14-16 wide each, alternating 84/82) — read as a repeating tiled
+// pattern rather than a natural formation. Rebuilt with genuinely uneven
+// widths (22, 10, 8, 24, 16, 8, 12 — large, small, small, large, medium,
+// small, medium-large, deliberately not A-B-A-B) and varied peak depths
+// (82, 87, 88, 82, 85, 88.5, 83) and valley depths (90, 89, 90, 88, 90,
+// 89, 88) between them, so spacing/overlap reads as irregular too. Peaks
+// still never exceed y=82 (2 units below the near mountain's own highest
+// points at y=80) and the overall top-edge range/coverage (y~81-90)
+// matches both prior versions — only the bump rhythm changed. Edges stay
 // reasonably defined (plain vector curves, no blur filter) rather than
-// soft/wispy. Fill/gradient/tint are untouched — see rockTint/rockShade.
+// soft/wispy. Fill/gradient/tint are untouched here — see rockTint/
+// rockShade below for the separate lightening pass.
 const ROCK_PATH =
   "M0,100 L0,88 " +
-  "C4,84 10,84 14,88 " +
-  "C18,82 26,82 30,88 " +
-  "C34,84 40,84 44,90 " +
-  "C48,84 56,84 60,88 " +
-  "C64,82 72,82 76,88 " +
-  "C80,84 86,84 90,90 " +
-  "C93,86 97,86 100,88 " +
+  "C3.3,82 8.8,82 11,82 C13.2,82 18.7,82 22,90 " +
+  "C23.5,87 26,87 27,87 C28,87 30.5,87 32,89 " +
+  "C33.2,88 35.2,88 36,88 C36.8,88 38.8,88 40,90 " +
+  "C43.6,82 49.6,82 52,82 C54.4,82 60.4,82 64,88 " +
+  "C66.4,85 70.4,85 72,85 C73.6,85 77.6,85 80,90 " +
+  "C81.2,88.5 83.2,88.5 84,88.5 C84.8,88.5 86.8,88.5 88,89 " +
+  "C89.8,83 92.8,83 94,83 C95.2,83 98.2,83 100,88 " +
   "L100,100 Z";
 
 // One puffy cloud silhouette, built like the old pine treeline was —
@@ -287,12 +296,13 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     };
   }
 
-  // The frontmost ridge's own base tint — same 0.85 ink-blend as the near
-  // mountain's own base (mountainTints above), so its DARKEST point stays
-  // in parity with "frontmost/darkest-leaning" rather than drifting
-  // lighter than the mountains behind it.
+  // The frontmost ridge's own base tint. Was 0.85 (matching the near
+  // mountain's own base exactly) — pulled down to 0.72 (matching the MID
+  // layer's base instead) as part of pushing the whole gradient range
+  // noticeably lighter per direction; rockShade below still keeps this
+  // the darkest-leaning layer overall via its own top/bottom spread.
   function rockTint(horizon: string) {
-    return mixHex(horizon, ink, 0.85);
+    return mixHex(horizon, ink, 0.72);
   }
 
   // Shades a flat tint into a top (ridge)/bottom (base) pair for the
@@ -308,19 +318,19 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   }
 
   // The ridge's own shading pulls its TOP much further toward the horizon
-  // color than the mountains' shared shadeTint does (0.5 vs. 0.22) — a
-  // prior flat version (effective ~0.94 ink-blend, no gradient at all)
-  // read as "too dark/heavy"; this keeps the ridge's darkest point (its
-  // bottom, still close to the near mountain's own ~0.9 effective blend)
-  // in parity with "frontmost/darkest-leaning," while its lit top edge —
-  // the portion most visible against the mountain above it — comes out
-  // meaningfully lighter, addressing the actual complaint. Still the same
-  // linearGradient top/bottom mechanism as shadeTint, just tuned toward
-  // more contrast for a layer that's supposed to read lighter overall.
+  // color than the mountains' shared shadeTint does. Second lightening
+  // pass: pushed both stops up again (top 0.5->0.58, bottom 0.28->0.16)
+  // on top of rockTint's own base drop (0.85->0.72) — confirmed via a
+  // live DOM check that the prior pass's values (e.g. dusk top
+  // rgb(137,55,67)/bottom rgb(34,13,25)) had survived the cloud-bank
+  // shape swap unchanged, so this genuinely compounds on top of them
+  // rather than re-doing already-applied work. Bottom still darkens
+  // meaningfully less than before, but stays clearly darker than top —
+  // same gradient direction/relationship, whole range shifted lighter.
   function rockShade(tint: string, horizon: string) {
     return {
-      top: mixHex(tint, horizon, 0.5),
-      bottom: mixHex(tint, ink, 0.28),
+      top: mixHex(tint, horizon, 0.58),
+      bottom: mixHex(tint, ink, 0.16),
     };
   }
 
