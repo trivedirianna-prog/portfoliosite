@@ -1,5 +1,12 @@
 @import "../sectionObject.css";
 
+/* Brief, subtle press-down feedback on click (matching About's §9
+   motion refinement), scoped to Education only. */
+.section-object--education .section-object__hit-area:active .section-object__art {
+  transform: scale(0.95);
+  transition-duration: 90ms;
+}
+
 .education-object__card {
   fill: var(--color-surface-paper-alt);
 }

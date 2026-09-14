@@ -1,0 +1,133 @@
+.education-window {
+  position: relative;
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+}
+
+/* --- Headline block: current degree, the clear primary content --- */
+
+.education-window__headline {
+  padding: var(--space-8) var(--space-6) var(--space-6);
+}
+
+.education-window__degree {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: var(--text-heading-sm);
+  line-height: var(--leading-heading);
+  color: var(--color-text-on-paper);
+  margin: 0 0 var(--space-2);
+}
+
+.education-window__school {
+  font-family: var(--font-serif);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-1);
+}
+
+.education-window__years {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-4);
+}
+
+.education-window__stat {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-1);
+}
+
+.education-window__stat strong {
+  font-weight: var(--weight-serif-semibold);
+  color: var(--color-text-on-paper);
+}
+
+.education-window__stat:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Supporting record: pre-college history, styled as a stamped/
+   annotated slip rather than plain bullets — a dashed attach-line, a
+   slight rotation like a pinned card, and a stamp graphic reusing the
+   desktop icon's own ring+dot motif (Education.tsx). --- */
+
+.education-window__record {
+  position: relative;
+  margin: 0 var(--space-6) var(--space-6);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  background: var(--color-surface-paper-alt);
+  border-top: 1px dashed var(--color-border-paper);
+  transform: rotate(-1deg);
+}
+
+.education-window__stamp {
+  position: absolute;
+  top: -15px;
+  right: var(--space-4);
+  width: 34px;
+  height: 34px;
+  transform: rotate(-10deg);
+  filter: drop-shadow(0 4px 8px rgba(20, 6, 24, 0.35));
+}
+
+.education-window__stamp-ring {
+  fill: none;
+  stroke: var(--color-text-on-paper);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.education-window__stamp-dot {
+  fill: var(--color-magenta-600);
+  opacity: 0.9;
+}
+
+.education-window__record-label {
+  display: block;
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-3);
+}
+
+.education-window__record-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px dotted var(--color-border-paper);
+}
+
+.education-window__record-row:last-child {
+  border-bottom: none;
+}
+
+.education-window__record-key {
+  color: var(--color-text-on-paper-dim);
+}
+
+.education-window__record-value {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: 0.95rem;
+  color: var(--color-text-on-paper);
+}
+
+/* CET percentile: the most specific/hardest-earned of the three figures,
+   so it gets slightly more visual weight — a hand-circled mark (like a
+   grader's pen), magenta-600, a touch larger than the other two values. */
+.education-window__record-row--cet {
+  padding-top: var(--space-3);
+}
+
+.education-window__record-value--cet {
+  display: inline-block;
+  font-size: 1.05rem;
+  color: var(--color-magenta-600);
+  border: 2px solid var(--color-magenta-600);
+  border-radius: 999px;
+  padding: 1px var(--space-3);
+  transform: rotate(-3deg);
+}

@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { AboutWindow } from "../sections/About/AboutWindow";
 import { AboutPhotoWindow } from "../sections/About/AboutPhotoWindow";
+import { EducationWindow } from "../sections/Education/EducationWindow";
 import { useWindowManager } from "./WindowManager";
 
 /*
@@ -10,13 +11,13 @@ import { useWindowManager } from "./WindowManager";
 
   Keyed by "sectionId:kind" since a section can spawn more than one
   window at once (About opens a text window AND a separate photo window
-  together, §8.1). Only About has real window components so far — this
-  is the §7.3/§7.4 test case, wired to the simplest real object before
-  the harder per-section content/interactions land in later phases.
+  together, §8.1); single-window sections (Education) just use the
+  default "default" kind from useSectionWindow.
 */
 const windowContentComponents: Record<string, ComponentType<{ windowId: string }>> = {
   "about:content": AboutWindow,
   "about:photo": AboutPhotoWindow,
+  "education:default": EducationWindow,
 };
 
 export function WindowHost() {
