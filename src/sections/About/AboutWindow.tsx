@@ -11,6 +11,11 @@ import "./AboutWindow.css";
   outline up as the entire window silhouette; that read as unreadable
   and overlapped neighboring desktop elements, so it was reverted).
   Content is placeholder/lorem — real About copy is a later phase.
+
+  Positioned off-center (rather than the shared default dead-center) so
+  it and AboutPhotoWindow — opened at the same instant, §8.1 — read as
+  two clearly separate, cascaded windows instead of one stacked on the
+  other's exact center.
 */
 export function AboutWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId } =
@@ -24,6 +29,7 @@ export function AboutWindow({ windowId }: { windowId: string }) {
       onFocus={() => focusWindow(windowId)}
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
+      style={{ left: "37%", top: "42%" }}
     >
       <div className="about-window">
         {/* Spine stripe — a hint of the journal cover's own plum-700,

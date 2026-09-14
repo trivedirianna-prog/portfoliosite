@@ -1,0 +1,39 @@
+/*
+  More editorial/physical than the plain rectangular content windows —
+  a thick pearl mat around the image, like a printed photo in a frame —
+  while still sitting inside the same Window shell (material="paper")
+  and using the same close/minimize controls as everything else (§8.1).
+*/
+
+.about-photo-window {
+  padding: var(--space-6);
+  background: var(--color-plum-900);
+}
+
+.about-photo-window__mat {
+  background: var(--color-surface-paper);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-object-resting);
+}
+
+.about-photo-window__placeholder {
+  aspect-ratio: 4 / 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--color-chrome-300), var(--color-chrome-100));
+}
+
+.about-photo-window__placeholder-tag {
+  color: var(--color-text-on-paper-dim);
+  font-size: 0.6rem;
+  text-align: center;
+  padding: 0 var(--space-4);
+}
+
+.about-photo-window__caption {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-on-dark-dim);
+  text-align: center;
+  font-size: 0.65rem;
+}

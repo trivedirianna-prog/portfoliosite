@@ -24,52 +24,96 @@
   z-index: var(--z-window-focused);
 }
 
+/* Heavier shadow/presence for a window meant to read as visually
+   weightier than a sibling opened alongside it (§8.1's photo window vs.
+   its text window) — independent of focus/z-order. */
+.window--emphasis {
+  box-shadow:
+    var(--shadow-window),
+    0 40px 90px rgba(10, 3, 14, 0.4);
+}
+
 /* --- Title bar: shared layout, per-material paint --- */
 
 .window__titlebar {
+  position: relative;
+  overflow: hidden;
   flex-shrink: 0;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-2) 0 var(--space-4);
+  /* Translucent + blurred so the bar reads as a distinct layer above
+     the content, not fused flat against it. */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .window__label {
   letter-spacing: var(--tracking-mono-label);
   text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
 
 .window__controls {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  position: relative;
+  z-index: 1;
 }
 
-/* Real, easily-clickable buttons (28px) styled from the site's own
-   material system — not macOS traffic lights, not a default browser
-   button. Icon-only via inline SVG (a minus / an X), stroked with
-   currentColor so each material variant below just sets a color. */
+/* --- Controls: always small glossy "hardware" chips, regardless of the
+   bar's own material — real palette color (plum/magenta), a proportional
+   catch-light, and real hover/active states. Icon-only via inline SVG (a
+   minus / an X), stroked with currentColor. --- */
+
 .window__control {
   width: 28px;
   height: 28px;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  color: var(--color-pearl);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.18)),
+    var(--color-plum-600);
+  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
   transition:
     transform var(--duration-quick) var(--ease-standard),
     box-shadow var(--duration-quick) var(--ease-standard),
-    background var(--duration-quick) var(--ease-standard),
-    color var(--duration-quick) var(--ease-standard);
+    filter var(--duration-quick) var(--ease-standard);
+}
+
+/* Small proportional catch-light — same recipe as .material-glossy's
+   own, scaled down for a 28px control. */
+.window__control::before {
+  content: "";
+  position: absolute;
+  top: 14%;
+  left: 18%;
+  width: 38%;
+  height: 32%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), transparent 75%);
+  transform: rotate(-15deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .window__control svg {
   width: 12px;
   height: 12px;
   overflow: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .window__control svg line {
@@ -78,87 +122,85 @@
   stroke-linecap: round;
 }
 
+.window__control--close {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.18)),
+    var(--color-magenta-600);
+}
+
 .window__control:hover {
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 var(--color-border-glossy-highlight),
+    0 4px 10px rgba(10, 3, 14, 0.4);
 }
 
 .window__control:active {
   transform: translateY(0);
+  filter: brightness(0.88);
+  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
 }
 
-/* --- Glossy family (Projects/Contact) --- */
+/* --- Glossy family (Projects/Contact): real .material-glossy recipe —
+   gradient base + single tight highlight streak, translucent. --- */
 
 .window--glossy .window__titlebar {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.12)),
-    var(--color-surface-glossy-flat);
+    color-mix(in srgb, var(--color-surface-glossy-flat) 88%, transparent);
   box-shadow:
     inset 0 1px 0 var(--color-border-glossy-highlight),
     inset 0 -10px 18px var(--color-border-glossy-shadow);
+}
+
+/* The one dominant highlight streak — a wide, flat ellipse rather than a
+   small round catch, since it's sitting on a short, wide bar rather than
+   an object's own rounded body. Same screen-blend/soft-falloff language
+   as every other glossy highlight in this project. */
+.window--glossy .window__titlebar::before {
+  content: "";
+  position: absolute;
+  top: -35%;
+  left: 6%;
+  width: 50%;
+  height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 75%
+  );
+  transform: rotate(-6deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .window--glossy .window__label {
   color: var(--color-text-on-dark);
 }
 
-.window--glossy .window__control {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
-    var(--color-surface-glossy-flat);
-  color: var(--color-chrome-100);
-  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
-}
-
-.window--glossy .window__control:hover {
-  box-shadow:
-    inset 0 1px 0 var(--color-border-glossy-highlight),
-    0 4px 10px rgba(10, 3, 14, 0.4);
-}
-
-.window--glossy .window__control--close:hover {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
-    var(--color-magenta-600);
-  color: var(--color-pearl);
-}
-
-.window--glossy .window__control--minimize:hover {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.16)),
-    var(--color-ice-500);
-  color: var(--color-pearl);
-}
-
-/* --- Paper family (About/Education/Committees) --- */
+/* --- Paper family (About/Education/Committees): real .material-paper
+   recipe — the same dot-texture + vertical gradient, translucent. --- */
 
 .window--paper .window__titlebar {
-  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+  background:
+    radial-gradient(circle at 30% 40%, rgba(21, 10, 27, 0.035) 0, transparent 2px),
+    radial-gradient(circle at 70% 65%, rgba(21, 10, 27, 0.03) 0, transparent 2px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-paper) 90%, transparent),
+      color-mix(in srgb, var(--color-surface-paper-alt) 90%, transparent)
+    );
+  background-size:
+    6px 6px,
+    7px 7px,
+    100% 100%;
   border-bottom: 1px solid var(--color-border-paper);
 }
 
 .window--paper .window__label {
   color: var(--color-text-on-paper);
-}
-
-.window--paper .window__control {
-  background: var(--color-surface-paper-alt);
-  color: var(--color-text-on-paper-dim);
-  border: 1px solid var(--color-border-paper);
-}
-
-.window--paper .window__control:hover {
-  background: var(--color-pearl);
-  box-shadow: var(--shadow-object-resting);
-}
-
-.window--paper .window__control--close:hover {
-  color: var(--color-magenta-600);
-  border-color: var(--color-magenta-600);
-}
-
-.window--paper .window__control--minimize:hover {
-  color: var(--color-ice-500);
-  border-color: var(--color-ice-500);
 }
 
 /* --- Body --- */

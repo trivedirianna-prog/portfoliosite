@@ -5,17 +5,22 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { SectionId, WindowState } from "./types";
+import type { SectionId, WindowKind, WindowState } from "./types";
 
 /*
   Owns open/minimize/close/focus state for all windows (§7.4). The key
   design point: minimizing a window does NOT send it to a taskbar —
   there is no taskbar in this design. A minimized window's "this is
   open" state lives entirely in this same WindowState array, keyed by
-  sectionId; the object that spawned the window (see useSectionWindow)
-  reads its OWN section's window state directly and renders its own
-  local dock tab when minimized, rather than a separate system-tray
+  (sectionId, kind); the object that spawned the window (see
+  useSectionWindow) reads its OWN window state directly and renders its
+  own local dock tab when minimized, rather than a separate system-tray
   component owned by this manager rendering anything itself.
+
+  A window is identified by (sectionId, kind) rather than sectionId
+  alone because a section can spawn more than one window at once — About
+  (§8.1) opens a text window AND a separate photo window together, each
+  independently open/closable/minimizable.
 
   Focus is tracked as a single focusedId plus array order — focusing a
   window moves it to the end of the array, so DOM order (and therefore
@@ -25,7 +30,7 @@ import type { SectionId, WindowState } from "./types";
 
 interface WindowManagerContextValue {
   windows: WindowState[];
-  openWindow: (sectionId: SectionId) => void;
+  openWindow: (sectionId: SectionId, kind: WindowKind) => void;
   closeWindow: (id: string) => void;
   minimizeWindow: (id: string) => void;
   restoreWindow: (id: string) => void;
@@ -46,8 +51,10 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const nextIdRef = useRef(0);
 
-  function openWindow(sectionId: SectionId) {
-    const existing = windows.find((w) => w.sectionId === sectionId);
+  function openWindow(sectionId: SectionId, kind: WindowKind) {
+    const existing = windows.find(
+      (w) => w.sectionId === sectionId && w.kind === kind,
+    );
     if (existing) {
       setWindows((prev) =>
         prev.map((w) => (w.id === existing.id ? { ...w, status: "open" } : w)),
@@ -55,8 +62,8 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
       setFocusedId(existing.id);
       return;
     }
-    const id = `${sectionId}-${nextIdRef.current++}`;
-    setWindows((prev) => [...prev, { id, sectionId, status: "open" }]);
+    const id = `${sectionId}-${kind}-${nextIdRef.current++}`;
+    setWindows((prev) => [...prev, { id, sectionId, kind, status: "open" }]);
     setFocusedId(id);
   }
 

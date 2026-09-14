@@ -15,15 +15,30 @@ import "./Window.css";
 
   `material` picks which of the two established chrome recipes the
   title bar uses — glossy (Projects/Contact) or paper (About/Education/
-  Committees) — so the bar itself still belongs to the section's own
-  material family instead of being a generic OS-gray strip. The body
-  (children) is otherwise unstyled here; each section's own window
-  content owns its background/padding/decoration.
+  Committees) — reproducing the REAL materials.css recipes (paper's dot-
+  texture + gradient; glossy's gradient base + single highlight streak),
+  not a flat recolor, so the bar still belongs to the section's own
+  material family instead of being a generic OS-gray strip. Both bar
+  variants get a translucent, slightly blurred background so the bar
+  itself reads as a distinct layer above the content.
+
+  Close/minimize are always small glossy chips regardless of the bar's
+  own material — real "hardware" controls (like a physical window's
+  buttons) stay one consistent language across every window, while only
+  the bar surface behind them varies per section.
+
+  The body (children) is otherwise unstyled here; each section's own
+  window content owns its background/padding/decoration.
 */
 
 interface WindowProps {
   title: string;
   material: "glossy" | "paper";
+  /** Heavier shadow/presence — for a window meant to read as visually
+   *  weightier than a sibling opened at the same time (e.g. About's
+   *  photo window vs. its text window, §8.1), independent of z-order/
+   *  focus. */
+  emphasis?: boolean;
   focused: boolean;
   onFocus: () => void;
   onClose: () => void;
@@ -35,6 +50,7 @@ interface WindowProps {
 export function Window({
   title,
   material,
+  emphasis = false,
   focused,
   onFocus,
   onClose,
@@ -44,7 +60,7 @@ export function Window({
 }: WindowProps) {
   return (
     <div
-      className={`window window--${material}${focused ? " window--focused" : ""}`}
+      className={`window window--${material}${emphasis ? " window--emphasis" : ""}${focused ? " window--focused" : ""}`}
       style={style}
       onPointerDown={onFocus}
     >

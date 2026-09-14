@@ -15,22 +15,30 @@ import "./About.css";
   in a soft curve, and a ribbon bookmark drapes off at a natural
   diagonal rather than hanging straight down.
 
-  Also the test case for the generic window system (§7.3/§7.4): clicking
-  opens AboutWindow (the same journal shape, larger); minimizing that
-  window collapses to a small tab rendered right here, next to this same
-  icon — local docking, not a taskbar — via useSectionWindow.
+  Also the test case for the generic window system (§7.3/§7.4), and for
+  §8.1's two-windows-at-once behavior: clicking spawns AboutWindow (text)
+  AND AboutPhotoWindow (photo) together, not staggered. Each is its own
+  independent WindowState (see useSectionWindow's "content"/"photo"
+  kinds), so each minimizes to its OWN small tab rendered right here,
+  next to this same icon — local docking, not a taskbar.
 */
 export function About() {
   const uid = useId();
   const pagesGradId = `${uid}-pages`;
-  const { isMinimized, open, restore } = useSectionWindow("about");
+  const content = useSectionWindow("about", "content");
+  const photo = useSectionWindow("about", "photo");
+
+  function handleOpen() {
+    content.openOrRestore();
+    photo.openOrRestore();
+  }
 
   return (
     <div className="section-object section-object--about">
       <button
         type="button"
         className="section-object__hit-area"
-        onClick={isMinimized ? restore : open}
+        onClick={handleOpen}
         aria-label="Open About"
       >
         <svg
@@ -75,13 +83,22 @@ export function About() {
         </svg>
       </button>
 
-      {isMinimized && (
+      {content.isMinimized && (
         <button
           type="button"
           className="section-object__dock-tab label-mono"
-          onClick={restore}
+          onClick={content.restore}
         >
           About
+        </button>
+      )}
+      {photo.isMinimized && (
+        <button
+          type="button"
+          className="section-object__dock-tab section-object__dock-tab--secondary label-mono"
+          onClick={photo.restore}
+        >
+          Photo
         </button>
       )}
 

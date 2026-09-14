@@ -85,9 +85,14 @@
    Positioned at the object's own corner rather than below the caption,
    so it reads as "attached to this object" rather than a second,
    unrelated caption-like label. Reuses the glossy chip recipe from
-   .window__chrome (same gradient/inset-highlight combination) so a
+   .window__titlebar (same gradient/inset-highlight combination) so a
    minimized window's tab and its restored window's own chrome are
-   visibly the same material. */
+   visibly the same material.
+
+   A section that spawns more than one window at once (About, §8.1) gets
+   more than one of these simultaneously — .section-object__dock-tab--
+   secondary mirrors the position to the opposite corner so two tabs
+   never overlap each other. */
 .section-object__dock-tab {
   position: absolute;
   top: -6px;
@@ -115,4 +120,10 @@
   box-shadow:
     var(--shadow-object-lifted),
     inset 0 1px 0 var(--color-border-glossy-highlight);
+}
+
+.section-object__dock-tab--secondary {
+  top: -6px;
+  right: auto;
+  left: -10px;
 }
