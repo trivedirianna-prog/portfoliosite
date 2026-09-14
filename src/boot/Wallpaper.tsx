@@ -69,9 +69,17 @@ interface SceneConfig {
   midMountainBottom: string;
   nearMountainTop: string;
   nearMountainBottom: string;
-  atmosphereColorA: string;
-  atmosphereColorB: string;
-  atmosphereOpacity: number;
+  /** Frontmost rock/terrain silhouette below the near mountain layer —
+   *  flat, hard-edged, no internal gradient (matches the mountains'
+   *  ORIGINAL flat-fill silhouette language, before Step 3 added
+   *  internal shading to the mountains themselves). */
+  rockTint: string;
+  /** Solid, crisply-edged cloud clusters beside the two peaks (not a
+   *  blurred atmosphere blend) — see CLOUD_SHAPE_PATH. Each cloud gets
+   *  the same top/bottom shading treatment as the mountains. */
+  cloudTop: string;
+  cloudBottom: string;
+  cloudOpacity: number;
   moonTop: number;
   moonLeft: number;
   moonLightColor: string;
@@ -153,6 +161,50 @@ const FAR_MOUNTAIN_PATH =
 const NEAR_MOUNTAIN_PATH =
   "M0,100 L0,88 C15,84 25,90 38,85 C50,80 62,88 75,83 C85,80 92,86 100,84 L100,100 Z";
 
+// A shallow, dark foreground strip below the near mountain — separate
+// silhouette, not a fix baked into the near layer itself, per the explicit
+// "add a rock/boulder or uneven terrain layer" direction. Small, irregular
+// bumps (unlike the mountains' broad curves) read as rocky/uneven ground
+// rather than another ridge. Confined to the bottom ~6% of the frame —
+// "a modest strip," not a fourth mountain layer.
+const ROCK_PATH =
+  "M0,100 L0,96 C6,94 10,97 16,95 C22,93 27,96 34,95 C40,94 45,97 52,95 " +
+  "C60,93 66,96 74,95 C82,94 88,97 94,95 C97,94 99,96 100,95 L100,100 Z";
+
+// One puffy cloud silhouette, built like the old pine treeline was —
+// several overlapping rounded bumps merging into one shape via cubic
+// beziers — rather than a single blurred ellipse. Drawn in its own small
+// local coordinate space (roughly 44 wide x 20 tall) and positioned via a
+// wrapping <g transform="translate(...) scale(...)"> per instance, so the
+// same shape can be reused at different sizes/offsets for a "cluster."
+const CLOUD_SHAPE_PATH =
+  "M4,19 C-2,19 -2,12 4,10 C3,3 13,0 18,5 C21,-3 33,-3 35,5 " +
+  "C43,2 47,10 41,14 C47,15 46,20 39,20 L7,20 C2,20 1,20 4,19 Z";
+
+// Cloud clusters sit in the OPEN SKY beside each peak's outer slope, never
+// draped over the ridge or centered over the valley — the mid mountain's
+// left peak footprint spans roughly x=8-34 (apex at 22,40), the right
+// peak's spans roughly x=66-92 (apex at 78,40), so these sit outside that
+// footprint entirely, above the ridge line, and clear of the moon's own
+// x-range (28-68 across the three states) with margin to spare.
+// CLOUD_SHAPE_PATH's own bbox is x:[-2,47] y:[-3,20] (49 wide, 23 tall) —
+// translate/scale below account for that so the visible puff actually
+// lands beside the peak rather than the transform origin doing so.
+const CLOUD_CLUSTERS: {
+  x: number;
+  y: number;
+  scale: number;
+}[] = [
+  // Left cluster — two overlapping puffs whose right edges stay at/below
+  // x=6.5, clear of the left peak's own footprint starting at x=8.
+  { x: -1, y: 14, scale: 0.16 },
+  { x: -3, y: 22, scale: 0.11 },
+  // Right cluster — mirrored: left edges stay at/above x=93.5, clear of
+  // the right peak's footprint ending at x=92.
+  { x: 94, y: 12, scale: 0.15 },
+  { x: 97, y: 20, scale: 0.11 },
+];
+
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const indigo950 = getCssVar("--color-indigo-950");
   const violet800 = getCssVar("--color-violet-800");
@@ -166,6 +218,7 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
   const ice500 = getCssVar("--color-ice-500");
+  const pearl = getCssVar("--color-pearl");
   const ink = getCssVar("--color-ink");
 
   // Every mountain layer's tint is a blend of THIS state's own horizon
@@ -184,6 +237,15 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       mid: mixHex(horizon, ink, 0.72),
       near: mixHex(horizon, ink, 0.85),
     };
+  }
+
+  // The frontmost rock/terrain strip below the near mountain — darker
+  // than even the near layer (0.94 vs 0.85), since it's now a small
+  // confined strip rather than a large expanse, and stays a flat,
+  // hard-edged silhouette with no internal gradient (matching how the
+  // mountains themselves looked before Step 3's shading was added).
+  function rockTint(horizon: string) {
+    return mixHex(horizon, ink, 0.94);
   }
 
   // Shades a flat tint into a top (ridge)/bottom (base) pair for the
@@ -241,18 +303,18 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const nightSkyAccent = mixHex(violet800, ice500, 0.35);
   const dawnSkyAccent = mixHex(indigo950, violet500, 0.45);
 
-  // Large, soft, low-opacity color masses screen-blended directly into
-  // the sky's own atmosphere layer (see .wallpaper__atmosphere) rather
-  // than distinct cloud-shaped objects sitting on top of the gradient —
-  // reads as depth/texture in the air, not decoration. Kept away from the
-  // ridge line and dim enough (opacity below) that they can't recreate
-  // the earlier "wispy halo around each peak" look.
-  const duskAtmosphereA = mixHex(horizonGold, magentaVivid400, 0.4);
-  const duskAtmosphereB = mixHex(violet500, magentaVivid400, 0.25);
-  const nightAtmosphereA = mixHex(violet800, ice500, 0.4);
-  const nightAtmosphereB = mixHex(violetShadow, violet600, 0.3);
-  const dawnAtmosphereA = mixHex(moonlightWarm, magentaVivid400, 0.35);
-  const dawnAtmosphereB = mixHex(violet500, moonlight, 0.3);
+  // Cloud base tint tied to each state's own horizon-glow color (same
+  // color-source logic as the mountains) so the clouds still belong to
+  // the same lit world instead of an independently-picked color. Shaded
+  // into a top (lit, toward pearl)/bottom (shadowed underside, toward
+  // ink) pair with the same shadeTint helper the mountains use — real
+  // cloud shading, not a flat single-tone shape.
+  const duskCloudColor = mixHex(horizonGold, magentaVivid400, 0.4);
+  const nightCloudColor = mixHex(violet800, ice500, 0.4);
+  const dawnCloudColor = mixHex(moonlightWarm, magentaVivid400, 0.35);
+  const duskCloudShade = shadeTint(duskCloudColor, pearl);
+  const nightCloudShade = shadeTint(nightCloudColor, pearl);
+  const dawnCloudShade = shadeTint(dawnCloudColor, pearl);
 
   return {
     dusk: {
@@ -273,9 +335,12 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: duskShades.mid.bottom,
       nearMountainTop: duskShades.near.top,
       nearMountainBottom: duskShades.near.bottom,
-      atmosphereColorA: duskAtmosphereA,
-      atmosphereColorB: duskAtmosphereB,
-      atmosphereOpacity: 0.35,
+      rockTint: rockTint(duskHorizon),
+      cloudTop: duskCloudShade.top,
+      cloudBottom: duskCloudShade.bottom,
+      // Most present at dusk — warm, golden-lit clouds catching the last
+      // light, per "more present at dusk/dawn."
+      cloudOpacity: 0.9,
       // Checked against real bounding boxes (Phase A.5), not eyeballed:
       // at 1280x800 the disc is 281.6px (radius 140.8px); the wordmark's
       // own rect top edge sits at y=312.4px; the right peak's apex (now
@@ -309,11 +374,12 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: nightShades.mid.bottom,
       nearMountainTop: nightShades.near.top,
       nearMountainBottom: nightShades.near.bottom,
-      atmosphereColorA: nightAtmosphereA,
-      atmosphereColorB: nightAtmosphereB,
-      // Dimmer than dusk/dawn — night's atmosphere should stay a quiet
-      // texture, not compete with the stars for attention.
-      atmosphereOpacity: 0.18,
+      rockTint: rockTint(nightHorizon),
+      cloudTop: nightCloudShade.top,
+      cloudBottom: nightCloudShade.bottom,
+      // Most subdued — dim, barely-lit silhouettes that don't compete
+      // with the stars for attention, per "more subdued at night."
+      cloudOpacity: 0.35,
       // Center (486, 128): disc bottom = 128+140.8 = 268.8, clearing the
       // wordmark's 312.4px top edge by ~44px; distance to the left peak
       // apex (281.6, 320) is ~281px, clearing its 140.8px radius by
@@ -343,9 +409,12 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: dawnShades.mid.bottom,
       nearMountainTop: dawnShades.near.top,
       nearMountainBottom: dawnShades.near.bottom,
-      atmosphereColorA: dawnAtmosphereA,
-      atmosphereColorB: dawnAtmosphereB,
-      atmosphereOpacity: 0.28,
+      rockTint: rockTint(dawnHorizon),
+      cloudTop: dawnCloudShade.top,
+      cloudBottom: dawnCloudShade.bottom,
+      // Present, cooler-lit than dusk's golden version — per "more
+      // present at dusk/dawn."
+      cloudOpacity: 0.8,
       // Center (358, 144): disc bottom = 144+140.8 = 284.8, clearing the
       // wordmark's 312.4px top edge by ~28px; distance to the left peak
       // apex (281.6, 320) is ~192px, clearing its 140.8px radius by
@@ -376,10 +445,10 @@ export function Wallpaper() {
   const farGradientId = `${uid}-far-gradient`;
   const midGradientId = `${uid}-mid-gradient`;
   const nearGradientId = `${uid}-near-gradient`;
+  const cloudGradientId = `${uid}-cloud-gradient`;
 
   const { isIdle } = useWindowManager();
   const skyRef = useRef<HTMLDivElement>(null);
-  const atmosphereRef = useRef<HTMLDivElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
   const horizonGlowGroupRef = useRef<SVGGElement>(null);
   const horizonInnerStopRef = useRef<SVGStopElement>(null);
@@ -394,6 +463,10 @@ export function Wallpaper() {
   const midBottomStopRef = useRef<SVGStopElement>(null);
   const nearTopStopRef = useRef<SVGStopElement>(null);
   const nearBottomStopRef = useRef<SVGStopElement>(null);
+  const rockRef = useRef<SVGPathElement>(null);
+  const cloudTopStopRef = useRef<SVGStopElement>(null);
+  const cloudBottomStopRef = useRef<SVGStopElement>(null);
+  const cloudsGroupRef = useRef<SVGGElement>(null);
   const starsRef = useRef<SVGGElement>(null);
   const cycleIndexRef = useRef(0);
 
@@ -421,18 +494,6 @@ export function Wallpaper() {
             "--sky-accent": scene.skyAccent,
             "--sky-mid": scene.skyMid,
             "--sky-bottom": scene.horizonColor,
-            duration,
-          },
-          0,
-        );
-      }
-      if (atmosphereRef.current) {
-        tl.to(
-          atmosphereRef.current,
-          {
-            "--cloud-a": scene.atmosphereColorA,
-            "--cloud-b": scene.atmosphereColorB,
-            opacity: scene.atmosphereOpacity,
             duration,
           },
           0,
@@ -501,6 +562,26 @@ export function Wallpaper() {
           0,
         );
       }
+      if (rockRef.current) {
+        tl.to(rockRef.current, { fill: scene.rockTint, duration }, 0);
+      }
+      if (cloudTopStopRef.current) {
+        tl.to(
+          cloudTopStopRef.current,
+          { attr: { "stop-color": scene.cloudTop }, duration },
+          0,
+        );
+      }
+      if (cloudBottomStopRef.current) {
+        tl.to(
+          cloudBottomStopRef.current,
+          { attr: { "stop-color": scene.cloudBottom }, duration },
+          0,
+        );
+      }
+      if (cloudsGroupRef.current) {
+        tl.to(cloudsGroupRef.current, { opacity: scene.cloudOpacity, duration }, 0);
+      }
       if (moonRef.current) {
         tl.to(
           moonRef.current,
@@ -549,8 +630,6 @@ export function Wallpaper() {
   return (
     <div className="wallpaper" aria-hidden="true">
       <div ref={skyRef} className="wallpaper__sky" />
-
-      <div ref={atmosphereRef} className="wallpaper__atmosphere" />
 
       <svg
         className="wallpaper__stars-layer"
@@ -622,6 +701,15 @@ export function Wallpaper() {
             <stop ref={nearTopStopRef} offset="0%" />
             <stop ref={nearBottomStopRef} offset="100%" />
           </linearGradient>
+
+          {/* Shared by every cloud puff — objectBoundingBox maps y1=0/
+              y2=1 to EACH path's own bbox independently, so one gradient
+              definition shades every puff (lit top, shadowed underside)
+              without needing a separate gradient per instance. */}
+          <linearGradient id={cloudGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop ref={cloudTopStopRef} offset="0%" />
+            <stop ref={cloudBottomStopRef} offset="100%" />
+          </linearGradient>
         </defs>
 
         <g ref={horizonGlowGroupRef} className="wallpaper__horizon-glow">
@@ -633,6 +721,25 @@ export function Wallpaper() {
               lower valley seam (peaks/valley shifted down 6 in Step 2). */}
           <ellipse cx="50" cy="66" rx="20" ry="14" fill={`url(#${horizonGlowOuterId})`} />
           <ellipse cx="50" cy="66" rx="10" ry="7" fill={`url(#${horizonGlowInnerId})`} />
+        </g>
+
+        {/* Solid, crisply-edged cloud clusters beside each peak's outer
+            slope — NOT a blurred/wispy shape and NOT blended into the sky
+            gradient (that earlier approach read as decoration, not
+            objects). No filter/blur and no mix-blend-mode here on
+            purpose: real fill, hard vector edges, same rendering as the
+            mountains themselves. Rendered before the mountains so any
+            stray overlap at a peak's outer edge is occluded by the
+            mountain silhouette in front of it, never the reverse. */}
+        <g ref={cloudsGroupRef} className="wallpaper__clouds">
+          {CLOUD_CLUSTERS.map((c) => (
+            <path
+              key={`${c.x}-${c.y}`}
+              d={CLOUD_SHAPE_PATH}
+              transform={`translate(${c.x}, ${c.y}) scale(${c.scale})`}
+              fill={`url(#${cloudGradientId})`}
+            />
+          ))}
         </g>
 
         <path
@@ -652,6 +759,12 @@ export function Wallpaper() {
           d={NEAR_MOUNTAIN_PATH}
           fill={`url(#${nearGradientId})`}
         />
+
+        {/* Frontmost rock/terrain strip — flat, hard-edged, no internal
+            gradient (fill tweened directly, not via a linearGradient) so
+            it stays visually distinct from the shaded mountain layer
+            above it rather than reading as a fourth ridge. */}
+        <path ref={rockRef} className="wallpaper__rocks" d={ROCK_PATH} />
       </svg>
     </div>
   );

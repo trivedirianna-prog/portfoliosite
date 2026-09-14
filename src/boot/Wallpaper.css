@@ -7,19 +7,22 @@
   Wallpaper.tsx), which is what keeps dusk/night/dawn reading as one
   continuous world rather than three swapped-in scenes.
 
-  No trees, no cloud-shaped objects — the mountain silhouettes (far/mid/
-  near, with the two-peak V-valley) are the only foreground element.
-  "Clouds" exist only as soft color variation baked into the sky's own
-  atmosphere layer (.wallpaper__atmosphere) — texture in the air, not
-  separate shapes sitting on top of the gradient.
+  No trees. Clouds are solid, crisply-edged puff clusters beside each
+  mountain peak's outer slope (.wallpaper__clouds in Wallpaper.tsx) — NOT
+  a blurred atmosphere blend baked into the sky gradient (an earlier pass
+  tried that; it read as decoration/texture rather than as objects, so it
+  was replaced). A separate rock/terrain silhouette
+  (.wallpaper__rocks) sits below the near mountain as a small, flat,
+  hard-edged foreground strip.
 
-  Layering (back to front, matching DOM order): sky -> atmosphere ->
-  stars -> moon -> horizon glow -> far mountain -> mid mountain (the
-  two-peak silhouette) -> near mountain. Later layers occlude earlier
+  Layering (back to front, matching DOM order): sky -> stars -> moon ->
+  horizon glow -> clouds -> far mountain -> mid mountain (the two-peak
+  silhouette) -> near mountain -> rocks. Later layers occlude earlier
   ones, which is how the moon ends up behind the ridge line, the
-  mountains occlude the horizon glow everywhere but the valley notch, and
-  the near layer sits in front of everything as the nearest, darkest
-  layer.
+  mountains occlude the horizon glow everywhere but the valley notch, the
+  mountains would occlude any stray cloud/peak overlap (never the
+  reverse), and the rock strip sits in front of everything as the
+  nearest, darkest layer.
 */
 
 .wallpaper {
@@ -57,26 +60,6 @@
   );
 }
 
-/* Soft, large, low-opacity color masses screen-blended straight into the
-   sky's own atmosphere rather than distinct cloud shapes sitting on top
-   of it — heavy blur keeps every edge dissolved, so it reads as texture/
-   depth in the air (closer to nebula-like color variation) instead of
-   objects. Sits above the flat sky gradient but below stars/moon/
-   mountains (it carries no z-index, so it stacks by DOM order among the
-   other unpositioned layers, while those set z-index explicitly above
-   it). Oversized inset so the heavy blur has room to fall off before the
-   viewport edge instead of visibly clipping. */
-.wallpaper__atmosphere {
-  position: absolute;
-  inset: -15% -8%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  filter: blur(70px);
-  background:
-    radial-gradient(45% 30% at 24% 26%, var(--cloud-a, transparent), transparent 70%),
-    radial-gradient(50% 32% at 72% 40%, var(--cloud-b, transparent), transparent 70%);
-}
-
 .wallpaper__stars-layer,
 .wallpaper__mountains-layer {
   position: absolute;
@@ -105,6 +88,15 @@
    this class would silently override (CSS beats presentation attributes
    in SVG, even though this class was written before the gradient/shading
    fill existed). */
+
+/* .wallpaper__clouds and .wallpaper__rocks carry no rules here — both are
+   plain opaque SVG fills (a shared linearGradient for the cloud puffs, a
+   flat tweened fill for the rock strip; see Wallpaper.tsx), deliberately
+   with no blur/mix-blend-mode so they read as solid objects rather than
+   the horizon glow/halo's soft screen-blended light. Class names exist
+   only as JS-side hooks/markers. Group opacity for the clouds (the
+   per-state "more present at dusk/dawn, more subdued at night" dial) is
+   tweened directly via GSAP rather than a CSS custom property. */
 
 /* The moving celestial body — a reflecting glossy sphere, never a light
    source itself (§4 reserves that for the wordmark alone). Built as
