@@ -23,12 +23,15 @@ import "./AboutWindow.css";
   scale, which already fit the real copy cleanly with no overflow.
 
   §9's discovery mechanism lives here now (moved off the desktop icon's
-  hover state): clicking the ribbon-tab slides out a second, narrower
-  ribbon strip beside this window with "Runner-Up, Rush Hour 5.0" on it.
-  It's a sibling of <Window>, not a child — <Window>'s own rounded-rect
-  clips its content, so a strip meant to visibly extend past this
-  window's edge has to live outside that clipping box, positioned off the
-  same cluster coordinates instead.
+  hover state): clicking the ribbon-tab slides a small paper panel out
+  beside this window with the Rush Hour 5.0 detail on it — a horizontal
+  slide, normal reading-orientation text (an earlier version used a
+  rotated vertical strip; reverted, it read as illegible and didn't
+  belong to this object's own paper language). It's a sibling of
+  <Window>, not a child — <Window>'s own rounded-rect clips its content,
+  so a panel meant to visibly extend past this window's edge has to live
+  outside that clipping box, positioned off the same cluster coordinates
+  instead.
 */
 export function AboutWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
@@ -42,9 +45,12 @@ export function AboutWindow({ windowId }: { windowId: string }) {
         style={CLUSTER_PRIMARY.style}
         aria-hidden={!rushHourRevealed}
       >
-        <span className="about-window__rush-hour-label label-mono">
-          Runner-Up, Rush Hour 5.0
+        <span className="about-window__rush-hour-kicker label-mono--bold">
+          Runner-Up
         </span>
+        <p className="about-window__rush-hour-text">
+          Rush Hour 5.0 — a team-based product-selling challenge.
+        </p>
       </div>
 
       <Window

@@ -35,42 +35,40 @@
   outline-offset: 2px;
 }
 
-/* §9 discovery detail: a second, narrower ribbon-shaped strip that
-   slides out from behind/beside the About window when its ribbon-tab is
-   clicked. Rendered as a sibling of <Window> (see AboutWindow.tsx), not
-   a child — <Window>'s own overflow:hidden would otherwise clip
-   anything meant to visibly extend past its edge. Shares the window's
-   own cluster anchor point (CLUSTER_PRIMARY.style) via inline style,
-   then this stylesheet adds the extra horizontal offset that separates
-   the strip from the window's shared center. Same base z-index as an
-   unfocused window, positioned earlier in the DOM, so the window itself
-   paints on top while the strip is tucked behind it (hidden state) and
-   during the first part of its slide out (revealed state).
+/* §9 discovery detail: a small paper panel that slides out horizontally
+   beside the About window when its ribbon-tab is clicked — real paper
+   material/palette (same pearl gradient + ink border as the window
+   content itself, a magenta kicker matching the ribbon/spine accents),
+   normal reading-orientation text, sliding sideways into view rather
+   than appearing as a rotated vertical tab. Rendered as a sibling of
+   <Window> (see AboutWindow.tsx), not a child — <Window>'s own
+   overflow:hidden would otherwise clip anything meant to visibly extend
+   past its edge. Shares the window's own cluster anchor point
+   (CLUSTER_PRIMARY.style) via inline style, then this stylesheet adds
+   the extra horizontal offset that separates the panel from the
+   window's shared center. Same base z-index as an unfocused window,
+   positioned earlier in the DOM, so the window itself paints on top
+   while the panel is tucked behind it (hidden state) and during the
+   first part of its slide (revealed state).
 
    Slides out to the LEFT, not the right: About's right side overlaps
-   the photo window in the cluster (§8.1), and a strip sliding out that
+   the photo window in the cluster (§8.1), and a panel sliding out that
    side would land on top of the photo image itself. The About window's
-   left side sits over clear desktop background, so the strip reads as
+   left side sits over clear desktop background, so the panel reads as
    "attached to About" without ever competing with the photo.
 */
 .about-window__rush-hour {
   position: fixed;
   z-index: var(--z-windows);
-  width: 40px;
-  padding: var(--space-5) var(--space-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-magenta-400) 92%, transparent),
-    color-mix(in srgb, var(--color-magenta-600) 92%, transparent)
-  );
+  width: 200px;
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+  border: 1px solid var(--color-border-paper);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-window);
   opacity: 0;
   pointer-events: none;
-  transform: translate(calc(-50% - 190px), -50%);
+  transform: translate(calc(-50% - 170px), -50%);
   transition:
     opacity var(--duration-standard) var(--ease-standard),
     transform var(--duration-standard) var(--ease-standard);
@@ -78,16 +76,21 @@
 
 .about-window__rush-hour--revealed {
   opacity: 1;
-  transform: translate(calc(-50% - 256px), -50%);
+  transform: translate(calc(-50% - 336px), -50%);
 }
 
-.about-window__rush-hour-label {
-  writing-mode: vertical-rl;
-  color: var(--color-pearl);
-  font-size: 0.55rem;
-  letter-spacing: var(--tracking-mono-label);
-  text-transform: uppercase;
-  white-space: nowrap;
+.about-window__rush-hour-kicker {
+  display: block;
+  color: var(--color-magenta-600);
+  margin-bottom: var(--space-2);
+}
+
+.about-window__rush-hour-text {
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-paper-dim);
+  margin: 0;
 }
 
 .about-window__content {
