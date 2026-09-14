@@ -69,7 +69,7 @@ interface SceneConfig {
   midMountainBottom: string;
   nearMountainTop: string;
   nearMountainBottom: string;
-  /** Frontmost jagged ridge below the near mountain layer — same
+  /** Frontmost cloud-bank silhouette below the near mountain layer — same
    *  linearGradient top/bottom shading technique as far/mid/near (see
    *  shadeTint), NOT a flat fill. Its base tint is pulled lighter than a
    *  prior near-black version while still reading as the frontmost,
@@ -176,22 +176,34 @@ const STAR_SPARKLE_PATH =
   "M0,-1 C0.18,-0.18 0.18,-0.18 1,0 C0.18,0.18 0.18,0.18 0,1 " +
   "C-0.18,0.18 -0.18,0.18 -1,0 C-0.18,-0.18 -0.18,-0.18 0,-1 Z";
 
-// A foreground ridge below the near mountain — separate silhouette, not a
+// A foreground band below the near mountain — separate silhouette, not a
 // fix baked into the near layer itself, per the explicit "add a
-// rock/boulder or uneven terrain layer" direction.
+// rock/boulder or uneven terrain layer" direction (its fill/tint stayed
+// rock-like through that pass and the gradient-lightening correction
+// after it; only the SHAPE changes here).
 //
-// Built the same way MID_MOUNTAIN_PATH is: straight-line (L) segments
-// meeting at sharp vertices, not smooth bezier curves — a genuine jagged
-// ridge silhouette rather than rolling foothills. Top edge zigzags
-// between y=82 and y=90 (never above the near mountain's own highest
-// points at y=80, so it stays visually behind/below the silhouette in
-// front of which it sits), with a taller overall band than the mountains
-// above it so it actually fills the lower frame. No highlight stroke or
-// seam line — contrast against the near mountain comes from the fill
-// gradient's own value alone (see rockTint/shadeTint below).
+// Was a jagged, straight-line-segment silhouette built the same way as
+// MID_MOUNTAIN_PATH (sharp vertices, mountain-style). Replaced with a
+// cloud-bank silhouette instead — rounded, overlapping puffy bumps built
+// the same cubic-bezier-dome technique as CLOUD_SHAPE_PATH below (each
+// bump: a C curve up to a flat-ish peak, a second C curve back down),
+// rather than sharp L vertices — so it reads as "a sea of clouds the
+// mountains rise above" rather than another rocky ridge. Same top-edge
+// range as the jagged version before it (y=82-90, staying below the near
+// mountain's own highest points at y=80) and same overall coverage/
+// height — only the silhouette construction changed. Edges stay
+// reasonably defined (plain vector curves, no blur filter) rather than
+// soft/wispy. Fill/gradient/tint are untouched — see rockTint/rockShade.
 const ROCK_PATH =
-  "M0,100 L0,88 L8,84 L16,90 L24,82 L32,88 L40,85 L48,90 L56,83 " +
-  "L64,89 L72,85 L80,90 L88,84 L94,88 L100,85 L100,100 Z";
+  "M0,100 L0,88 " +
+  "C4,84 10,84 14,88 " +
+  "C18,82 26,82 30,88 " +
+  "C34,84 40,84 44,90 " +
+  "C48,84 56,84 60,88 " +
+  "C64,82 72,82 76,88 " +
+  "C80,84 86,84 90,90 " +
+  "C93,86 97,86 100,88 " +
+  "L100,100 Z";
 
 // One puffy cloud silhouette, built like the old pine treeline was —
 // several overlapping rounded bumps merging into one shape via cubic
@@ -894,11 +906,11 @@ export function Wallpaper() {
           fill={`url(#${nearGradientId})`}
         />
 
-        {/* Frontmost jagged ridge — same linearGradient top/bottom
-            shading mechanism as far/mid/near above (see rockShade), not a
-            flat fill. Distinct from the near mountain above it via its
-            own jagged (straight-segment) shape and gradient values, not
-            via a highlight stroke or seam line. */}
+        {/* Frontmost cloud-bank silhouette — same linearGradient top/
+            bottom shading mechanism as far/mid/near above (see
+            rockShade), not a flat fill. Distinct from the near mountain
+            above it via its own puffy (rounded-bump) shape and gradient
+            values, not via a highlight stroke or seam line. */}
         <path
           className="wallpaper__mountain wallpaper__rocks"
           d={ROCK_PATH}
