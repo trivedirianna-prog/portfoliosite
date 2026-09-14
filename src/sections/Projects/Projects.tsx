@@ -38,6 +38,12 @@ import "./Projects.css";
   window later only means adding its own component + one more
   useSectionWindow call here, the stagger/positioning math already
   adapts.
+
+  Stacking order is deliberate, not incidental: Portfolio (shipped,
+  most concrete) ends up frontmost, Pandora (designed prototype) in the
+  middle, AgriVerse (concept/pitch stage) furthest back — mirroring the
+  three projects' finished-ness tiers from §8.3. See handleOpen's
+  reversed open sequence for how that's actually achieved.
 */
 export function Projects() {
   const uid = useId();
@@ -91,8 +97,15 @@ export function Projects() {
 
     // Each project window rides out along the gesture, staggered so the
     // fan-out reads as one continuous beat rather than a simultaneous
-    // pop — generic over however many projects exist.
-    projects.forEach((project, i) => {
+    // pop. Opened back-to-front by finished-ness tier (§8.3): AgriVerse
+    // (concept/pitch stage) first, Pandora (designed prototype) next,
+    // Portfolio (shipped, most concrete) last — WindowManager stacks
+    // purely by open order (last-opened lands on top, the same
+    // mechanism About's cluster uses), so opening Portfolio last is what
+    // puts it frontmost, with AgriVerse ending up furthest back. This is
+    // the actual z-order mechanism, not a z-index override layered on
+    // afterward.
+    [...projects].reverse().forEach((project, i) => {
       tl.call(() => project.openOrRestore(), undefined, 0.16 + (i * FAN_STAGGER_MS) / 1000);
     });
   }

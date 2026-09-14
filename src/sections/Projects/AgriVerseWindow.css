@@ -1,82 +1,39 @@
 /* Asymmetric, slightly uneven corners plus a dashed outer border — a
    deliberately less-finished, "still a sketch" silhouette matching its
    concept/pitch-stage content, distinct from Portfolio's crisp rectangle
-   and Pandora's soft artboard rounding. */
+   and Pandora's soft artboard rounding. Unchanged by the content swap
+   below — only what's inside this shape changed. */
 .window.agriverse-window--shape {
   border-radius: var(--radius-sm) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   outline: 1px dashed color-mix(in srgb, var(--color-ice-400) 40%, transparent);
   outline-offset: -1px;
 }
 
+/* Text-only content (no diagram) — generous padding on every side so a
+   short amount of copy still reads as an intentional, text-forward
+   window rather than a diagram-shaped layout with the diagram missing. */
 .agriverse-window {
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-6);
   background: linear-gradient(180deg, var(--color-plum-800), var(--color-plum-900));
 }
 
-.agriverse-window__title {
+.agriverse-window__lead {
   font-family: var(--font-serif);
-  font-weight: var(--weight-serif-semibold);
-  font-size: 1.3rem;
-  color: var(--color-text-on-dark);
-  margin: 0 0 var(--space-3);
-}
-
-.agriverse-window__origin {
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  line-height: var(--leading-body);
-  color: var(--color-text-on-dark-dim);
-  margin: 0 0 var(--space-3);
-}
-
-.agriverse-window__description {
-  font-family: var(--font-serif);
-  font-size: 1rem;
+  font-weight: var(--weight-serif-medium);
+  font-size: 1.15rem;
   line-height: var(--leading-body);
   color: var(--color-text-on-dark);
   margin: 0 0 var(--space-6);
 }
 
-.agriverse-window__schematic {
-  display: block;
-  width: 100%;
-  height: auto;
+.agriverse-window__paragraph {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-dark-dim);
+  margin: 0 0 var(--space-4);
 }
 
-.agriverse-window__node {
-  fill: color-mix(in srgb, var(--color-plum-600) 70%, var(--color-surface-glossy-flat) 30%);
-  stroke: var(--color-border-glossy-highlight);
-  stroke-width: 1;
-}
-
-.agriverse-window__node--core {
-  fill: var(--color-magenta-600);
-}
-
-.agriverse-window__node--outcome {
-  fill: var(--color-ice-500);
-}
-
-.agriverse-window__node-text {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.02em;
-  fill: var(--color-pearl);
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-
-.agriverse-window__node-text--outcome {
-  fill: var(--color-ink);
-  font-weight: var(--weight-mono-bold);
-}
-
-.agriverse-window__arrow {
-  fill: none;
-  stroke: var(--color-chrome-300);
-  stroke-width: 1.5;
-}
-
-.agriverse-window__arrowhead {
-  fill: var(--color-chrome-300);
+.agriverse-window__paragraph:last-child {
+  margin-bottom: 0;
 }
