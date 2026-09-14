@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { useSectionWindow } from "../../windows/useSectionWindow";
+import { openClusterPair } from "../../windows/windowCluster";
 import {
   JOURNAL_COVER,
   JOURNAL_GUTTER_PATH,
@@ -29,8 +30,10 @@ export function About() {
   const photo = useSectionWindow("about", "photo");
 
   function handleOpen() {
-    content.openOrRestore();
-    photo.openOrRestore();
+    // content (text) is PRIMARY — ends up on top; photo is EMPHASIS —
+    // its heavier look comes from its own shadow/framing, not from
+    // being the topmost layer. See windowCluster.ts for the ordering.
+    openClusterPair(content, photo);
   }
 
   return (

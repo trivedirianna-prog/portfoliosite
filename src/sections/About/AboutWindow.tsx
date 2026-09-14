@@ -10,14 +10,16 @@ import "./AboutWindow.css";
   layered on top of that rectangle, not a replacement for its shape.
 
   Positioned as the PRIMARY half of the editorial cluster
-  (windowCluster.ts) — opened before AboutPhotoWindow so it sits behind
-  it in the stack, tucked beside/behind the heavier photo window rather
-  than centered and parallel to it. Upright, not rotated — the cluster
-  feeling comes from offset position and real overlap alone.
+  (windowCluster.ts) — opened (via openClusterPair) so it lands ON TOP
+  of AboutPhotoWindow, not behind it: the photo window's heavier look
+  comes entirely from its own emphasis shadow/framing, not from being
+  the topmost layer. Upright, not rotated — the cluster feeling comes
+  from offset position and real overlap alone.
 
-  Deliberately narrower than the shared Window default (460px) — a
-  smaller, tighter footprint with the content sized to match rather
-  than the window ballooning to fit a default text size.
+  Uses the shared Window default width (460px) — a later pass mistakenly
+  shrunk THIS window when the photo window was the one that needed to
+  come down in size; reverted back to its original size/padding/type
+  scale, which already fit the real copy cleanly with no overflow.
 */
 export function AboutWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId } =
@@ -31,7 +33,7 @@ export function AboutWindow({ windowId }: { windowId: string }) {
       onFocus={() => focusWindow(windowId)}
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
-      style={{ ...CLUSTER_PRIMARY.style, width: "min(80vw, 340px)" }}
+      style={CLUSTER_PRIMARY.style}
     >
       <div className="about-window">
         {/* Spine stripe — a hint of the journal cover's own plum-700,

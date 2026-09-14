@@ -1,5 +1,6 @@
 .about-window {
   position: relative;
+  min-height: 260px;
   background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
 }
 
@@ -8,7 +9,7 @@
 .about-window__spine {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 8px;
+  width: 10px;
   background: var(--color-plum-700);
 }
 
@@ -17,35 +18,32 @@
 .about-window__ribbon-tab {
   position: absolute;
   top: 0;
-  right: var(--space-6);
-  width: 14px;
-  height: 26px;
+  right: var(--space-8);
+  width: 16px;
+  height: 30px;
   background: var(--color-magenta-600);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
 }
 
-/* Window's own footprint was shrunk noticeably (see AboutWindow.tsx) —
-   padding/font-size/line-height tightened to match rather than letting
-   the window balloon back up to fit a larger default text size. */
 .about-window__content {
-  padding: var(--space-6) var(--space-4) var(--space-4) calc(var(--space-4) + 8px);
+  padding: var(--space-8) var(--space-6) var(--space-6) calc(var(--space-6) + 10px);
   color: var(--color-text-on-paper);
 }
 
 .about-window__heading {
   font-family: var(--font-serif);
   font-weight: var(--weight-serif-semibold);
-  font-size: 1.05rem;
+  font-size: var(--text-heading-sm);
   line-height: var(--leading-heading);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-4);
 }
 
 .about-window__body-text {
   font-family: var(--font-serif);
-  font-size: 0.78rem;
-  line-height: 1.45;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   color: var(--color-text-on-paper-dim);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-4);
 }
 
 .about-window__body-text:last-child {

@@ -6,17 +6,16 @@ import "./AboutPhotoWindow.css";
 /*
   About's SECOND window (§8.1) — opens simultaneously with AboutWindow
   (the text/journal window), not staggered; see About.tsx's click
-  handler, which opens this one second so it lands on top of the DOM
-  stack (matching its heavier visual weight). Uses the same Window shell
-  (material="paper", same close/minimize controls) but leans more
-  editorial/physical than the plain content window: a thick pearl mat/
-  border like a printed photo, and `emphasis` for a heavier shadow.
+  handler (openClusterPair), which opens THIS one first so AboutWindow
+  lands on top of it. This window's heavier visual weight comes entirely
+  from its own `emphasis` shadow and the thick pearl mat/border below —
+  not from being the topmost layer.
 
   Positioned as the EMPHASIS half of the editorial cluster
   (windowCluster.ts) — overlapping a real portion of AboutWindow's edge,
-  at a more modest size gap than the first version of this window used.
-  Upright, not rotated — the cluster feeling comes from offset position
-  and real overlap alone.
+  at a modest footprint (smaller than a prior, too-large version of this
+  window). Upright, not rotated — the cluster feeling comes from offset
+  position and real overlap alone.
 
   STILL A PLACEHOLDER: no real photo has been supplied yet. Per
   explicit direction, this project never generates/invents an image —

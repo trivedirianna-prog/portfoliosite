@@ -15,15 +15,33 @@ import type { CSSProperties } from "react";
   "editorial spread" feeling now comes from offset position and overlap
   alone, not tilt.
 
-  Two roles: PRIMARY (the plainer/lighter window, tucked behind/beside)
-  and EMPHASIS (the visually heavier one, layered on top — pair with
-  Window's own `emphasis` prop). Whichever window opens second lands on
-  top of the DOM stack (see WindowManager), so open PRIMARY first.
+  Two roles: PRIMARY (the plainer/lighter window — ends up ON TOP of the
+  stack) and EMPHASIS (the visually heavier one — pair with Window's own
+  `emphasis` prop, but sits BEHIND primary; its weight comes entirely
+  from its own shadow/framing, not from being the topmost layer).
 */
 export const CLUSTER_PRIMARY: { style: CSSProperties } = {
   style: { left: "38%", top: "42%" },
 };
 
 export const CLUSTER_EMPHASIS: { style: CSSProperties } = {
-  style: { left: "58%", top: "53%", width: "min(90vw, 490px)" },
+  style: { left: "58%", top: "53%", width: "min(85vw, 420px)" },
 };
+
+/*
+  Opens both halves of a cluster in the order that produces the intended
+  stacking. WindowManager stacks purely by open order (the most recently
+  opened/focused window lands on top), so EMPHASIS must be opened first
+  here, before PRIMARY — this is the one place that ordering needs to be
+  correct, rather than leaving each section to remember which of its two
+  `openOrRestore` calls to make first. Normal focus behavior is
+  untouched: clicking either window afterward still brings IT to front,
+  same as any other window.
+*/
+export function openClusterPair(
+  primary: { openOrRestore: () => void },
+  emphasis: { openOrRestore: () => void },
+) {
+  emphasis.openOrRestore();
+  primary.openOrRestore();
+}
