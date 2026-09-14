@@ -16,7 +16,10 @@
 /* Small ribbon-tab accent tucked into the top edge, clear of the title
    bar above and the content padding below. Also the §9 discovery
    trigger now (see AboutWindow.tsx) — a real <button>, reset to keep its
-   exact prior appearance (same size/color/clip-path), just clickable. */
+   exact prior appearance (same size/clip-path), just clickable.
+   magenta-600 — the same solid fill as the pennant reveal it triggers,
+   so the two read as one continuous ribbon material rather than two
+   separate objects. */
 .about-window__ribbon-tab {
   position: absolute;
   top: 0;
@@ -35,40 +38,44 @@
   outline-offset: 2px;
 }
 
-/* §9 discovery detail: a small paper panel that slides out horizontally
-   beside the About window when its ribbon-tab is clicked — real paper
-   material/palette (same pearl gradient + ink border as the window
-   content itself, a magenta kicker matching the ribbon/spine accents),
-   normal reading-orientation text, sliding sideways into view rather
-   than appearing as a rotated vertical tab. Rendered as a sibling of
-   <Window> (see AboutWindow.tsx), not a child — <Window>'s own
-   overflow:hidden would otherwise clip anything meant to visibly extend
-   past its edge. Shares the window's own cluster anchor point
+/* §9 discovery detail: a pennant/ribbon silhouette (sharp point at
+   vertical center, a step/notch cut in just behind it — not a plain
+   rectangle or a soft rounded tab) that slides out horizontally beside
+   the About window when its ribbon-tab is clicked. Solid magenta-600,
+   matching the ribbon-tab exactly so trigger and reveal read as one
+   piece of ribbon rather than two different objects. Rendered as a
+   sibling of <Window> (see AboutWindow.tsx), not a child — <Window>'s
+   own overflow:hidden would otherwise clip anything meant to visibly
+   extend past its edge. Shares the window's own cluster anchor point
    (CLUSTER_PRIMARY.style) via inline style, then this stylesheet adds
-   the extra horizontal offset that separates the panel from the
+   the extra horizontal offset that separates the shape from the
    window's shared center. Same base z-index as an unfocused window,
    positioned earlier in the DOM, so the window itself paints on top
-   while the panel is tucked behind it (hidden state) and during the
+   while the shape is tucked behind it (hidden state) and during the
    first part of its slide (revealed state).
 
    Slides out to the LEFT, not the right: About's right side overlaps
-   the photo window in the cluster (§8.1), and a panel sliding out that
+   the photo window in the cluster (§8.1), and a shape sliding out that
    side would land on top of the photo image itself. The About window's
-   left side sits over clear desktop background, so the panel reads as
+   left side sits over clear desktop background, so it reads as
    "attached to About" without ever competing with the photo.
+
+   The point sits at the RIGHT edge (100% width, 50% height) with the
+   body tapering in from 82% — the text block is padded well clear of
+   that taper (generous right padding, not compressed padding) so no
+   line ever runs into the narrowing point; the shape stayed exactly as
+   specified rather than being redrawn to fit the copy.
 */
 .about-window__rush-hour {
   position: fixed;
   z-index: var(--z-windows);
-  width: 200px;
-  padding: var(--space-4) var(--space-5);
-  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
-  border: 1px solid var(--color-border-paper);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-window);
+  width: 240px;
+  padding: var(--space-6) 52px var(--space-6) var(--space-6);
+  clip-path: polygon(0% 0%, 82% 0%, 100% 50%, 82% 100%, 0% 100%);
+  background: var(--color-magenta-600);
   opacity: 0;
   pointer-events: none;
-  transform: translate(calc(-50% - 170px), -50%);
+  transform: translate(calc(-50% - 180px), -50%);
   transition:
     opacity var(--duration-standard) var(--ease-standard),
     transform var(--duration-standard) var(--ease-standard);
@@ -76,20 +83,14 @@
 
 .about-window__rush-hour--revealed {
   opacity: 1;
-  transform: translate(calc(-50% - 336px), -50%);
-}
-
-.about-window__rush-hour-kicker {
-  display: block;
-  color: var(--color-magenta-600);
-  margin-bottom: var(--space-2);
+  transform: translate(calc(-50% - 356px), -50%);
 }
 
 .about-window__rush-hour-text {
   font-family: var(--font-serif);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   line-height: var(--leading-body);
-  color: var(--color-text-on-paper-dim);
+  color: var(--color-pearl);
   margin: 0;
 }
 
