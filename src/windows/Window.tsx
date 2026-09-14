@@ -39,6 +39,12 @@ interface WindowProps {
    *  photo window vs. its text window, §8.1), independent of z-order/
    *  focus. */
   emphasis?: boolean;
+  /** Degrees to rotate the whole window, for an editorial cluster
+   *  layout (§8.1, see windowCluster.ts) — composed with the base
+   *  centering transform here rather than left for callers to
+   *  reconstruct, since a plain inline `transform` would otherwise
+   *  clobber the centering translate the stylesheet applies. */
+  rotate?: number;
   focused: boolean;
   onFocus: () => void;
   onClose: () => void;
@@ -51,6 +57,7 @@ export function Window({
   title,
   material,
   emphasis = false,
+  rotate,
   focused,
   onFocus,
   onClose,
@@ -58,10 +65,15 @@ export function Window({
   style,
   children,
 }: WindowProps) {
+  const resolvedStyle: React.CSSProperties | undefined =
+    rotate === undefined
+      ? style
+      : { ...style, transform: `translate(-50%, -50%) rotate(${rotate}deg)` };
+
   return (
     <div
       className={`window window--${material}${emphasis ? " window--emphasis" : ""}${focused ? " window--focused" : ""}`}
-      style={style}
+      style={resolvedStyle}
       onPointerDown={onFocus}
     >
       <div className="window__titlebar">

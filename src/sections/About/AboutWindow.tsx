@@ -1,21 +1,18 @@
 import { Window } from "../../windows/Window";
 import { useWindowManager } from "../../windows/WindowManager";
+import { CLUSTER_PRIMARY } from "../../windows/windowCluster";
 import "./AboutWindow.css";
 
 /*
-  About's window (§7.3/§7.4 test case). Per direction, this is now the
-  same plain rectangle every window uses — journal character (the
-  spine-colored stripe, the small ribbon-tab accent) is surface
-  decoration layered on top of that rectangle, not a replacement for its
-  shape (an earlier pass scaled the desktop icon's own page/ribbon
-  outline up as the entire window silhouette; that read as unreadable
-  and overlapped neighboring desktop elements, so it was reverted).
-  Content is placeholder/lorem — real About copy is a later phase.
+  About's window (§7.3/§7.4 test case). Per direction, this is the same
+  plain rectangle every window uses — journal character (the spine-
+  colored stripe, the small ribbon-tab accent) is surface decoration
+  layered on top of that rectangle, not a replacement for its shape.
 
-  Positioned off-center (rather than the shared default dead-center) so
-  it and AboutPhotoWindow — opened at the same instant, §8.1 — read as
-  two clearly separate, cascaded windows instead of one stacked on the
-  other's exact center.
+  Positioned/rotated as the PRIMARY half of the editorial cluster
+  (windowCluster.ts) — opened before AboutPhotoWindow so it sits behind
+  it in the stack, tucked beside/behind the heavier photo window rather
+  than centered and parallel to it.
 */
 export function AboutWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId } =
@@ -29,7 +26,8 @@ export function AboutWindow({ windowId }: { windowId: string }) {
       onFocus={() => focusWindow(windowId)}
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
-      style={{ left: "37%", top: "42%" }}
+      style={CLUSTER_PRIMARY.style}
+      rotate={CLUSTER_PRIMARY.rotate}
     >
       <div className="about-window">
         {/* Spine stripe — a hint of the journal cover's own plum-700,
@@ -39,18 +37,19 @@ export function AboutWindow({ windowId }: { windowId: string }) {
         <div className="about-window__ribbon-tab" aria-hidden="true" />
 
         <div className="about-window__content">
-          <p className="about-window__placeholder-tag label-mono">
-            placeholder — real copy next phase
-          </p>
           <h2 className="about-window__heading">Rianna Trivedi</h2>
           <p className="about-window__body-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-            enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+            {"Hi, I'm Rianna — a second-year Computer Engineering student at D.J. Sanghvi College of Engineering."}
           </p>
           <p className="about-window__body-text">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse
-            cillum dolore eu fugiat nulla pariatur.
+            {
+              "I'm interested in exploring the different sides of Computer Engineering, especially where technology, design, and creativity overlap. I enjoy working on projects where I can build something functional while also thinking about how it looks and feels. So far, I've worked with Java, C, HTML, CSS, JavaScript, and Figma, and I'm always interested in learning something new."
+            }
+          </p>
+          <p className="about-window__body-text">
+            {
+              "While I'm not doing anything remotely academic, I'm usually listening to music, singing, reading, or going down an internet rabbit hole."
+            }
           </p>
         </div>
       </div>
