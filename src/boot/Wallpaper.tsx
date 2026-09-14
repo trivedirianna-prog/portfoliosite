@@ -47,15 +47,31 @@ const HOLD_MS = 20000;
 
 interface SceneConfig {
   skyTop: string;
+  /** Extra hue breakpoint between skyTop and skyMid (see Wallpaper.css) —
+   *  gives states room for a genuine multi-hue journey (night's icy-blue
+   *  note in particular) without touching the skyMid/skyBottom timing
+   *  that Step 2 tuned against the mountain ridge line. */
+  skyAccent: string;
   skyMid: string;
   /** Also the horizon-glow bloom's own color — the richest, most
    *  saturated point in the scene, and the single source every mountain
    *  layer's tint is blended from (see mountainTints). */
   horizonColor: string;
   horizonGlowOpacity: number;
-  farMountainTint: string;
-  midMountainTint: string;
-  nearMountainTint: string;
+  /** Each mountain layer now shades top (ridge, catching horizon light)
+   *  to bottom (base, toward ink) instead of one flat fill — see
+   *  shadeTint. Hard edges BETWEEN layers stay (each layer is still its
+   *  own flat-fill-free but self-contained shape); this is only variation
+   *  WITHIN a layer. */
+  farMountainTop: string;
+  farMountainBottom: string;
+  midMountainTop: string;
+  midMountainBottom: string;
+  nearMountainTop: string;
+  nearMountainBottom: string;
+  atmosphereColorA: string;
+  atmosphereColorB: string;
+  atmosphereOpacity: number;
   moonTop: number;
   moonLeft: number;
   moonLightColor: string;
@@ -125,8 +141,17 @@ const FAR_MOUNTAIN_PATH =
 // trees, no clouds: both were cut entirely per this pass's Step 1). Kept
 // simple/smooth so it stays a quiet dark foundation, not a competing
 // silhouette detail of its own.
+//
+// Was "M0,100 L0,90 C20,87 35,91 50,88 C65,85 80,90 100,87 L100,100 Z" — a
+// top edge that only wandered between y=85 and y=91 (6% of the frame).
+// Combined with a fill nearly crushed to pure ink (see mountainTints),
+// that shallow a curve reads as a flat rectangular band rather than a
+// ridge, especially once the trees that used to break up its silhouette
+// were removed — the "leftover artifact" strip at the bottom edge is this
+// shape being too flat, not a separate hidden layer. Widened to an 80-90
+// range (12%) so it reads as rolling foothills.
 const NEAR_MOUNTAIN_PATH =
-  "M0,100 L0,90 C20,87 35,91 50,88 C65,85 80,90 100,87 L100,100 Z";
+  "M0,100 L0,88 C15,84 25,90 38,85 C50,80 62,88 75,83 C85,80 92,86 100,84 L100,100 Z";
 
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const indigo950 = getCssVar("--color-indigo-950");
@@ -140,26 +165,47 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const horizonGold = getCssVar("--color-horizon-gold");
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
+  const ice500 = getCssVar("--color-ice-500");
   const ink = getCssVar("--color-ink");
 
   // Every mountain layer's tint is a blend of THIS state's own horizon
   // color and ink — more haze (less ink) the farther back the layer
   // sits — so sky and mountains share one color source instead of two
   // independently-chosen palettes meeting at a visible seam. Wide spread
-  // (0.35/0.72/0.96) so each layer still reads as a distinct flat,
-  // hard-edged shape rather than blending into its neighbor.
+  // so each layer still reads as a distinct flat, hard-edged shape rather
+  // than blending into its neighbor. near was 0.96 — crushed almost to
+  // pure ink, which read as a flat black strip disconnected from the mid
+  // layer's own hue (the "bottom strip" artifact). Pulled back to 0.85 so
+  // it keeps a visible hue link to the rest of the range while staying
+  // the darkest, nearest layer.
   function mountainTints(horizon: string) {
     return {
       far: mixHex(horizon, ink, 0.35),
       mid: mixHex(horizon, ink, 0.72),
-      near: mixHex(horizon, ink, 0.96),
+      near: mixHex(horizon, ink, 0.85),
+    };
+  }
+
+  // Shades a flat tint into a top (ridge)/bottom (base) pair for the
+  // internal-gradient fill below — lighter near the top, as if catching
+  // the horizon glow it's facing, darkening toward the base. Hard edges
+  // BETWEEN mountain layers are untouched by this; it only varies color
+  // within each layer's own shape.
+  function shadeTint(tint: string, horizon: string) {
+    return {
+      top: mixHex(tint, horizon, 0.22),
+      bottom: mixHex(tint, ink, 0.32),
     };
   }
 
   // Dusk: warmest/most golden.
   const duskHorizon = mixHex(magentaVivid600, horizonGold, 0.4);
-  // Night: most subdued — pulled toward violet rather than left vivid.
-  const nightHorizon = mixHex(magentaVivid700, violet800, 0.3);
+  // Night: pulled toward magenta more than before (0.3 -> 0.55) so the
+  // horizon has its own distinct hue-shift from the violet mid-sky
+  // instead of sitting in the same violet family top to bottom — while
+  // magentaVivid700 itself (unlike dusk's magentaVivid600) is dark/muted
+  // enough that this still reads as "night," not a second dusk.
+  const nightHorizon = mixHex(magentaVivid700, violet800, 0.55);
   // Dawn: cooler than dusk, but still rich — never pale/washed out.
   const dawnHorizon = mixHex(magentaVivid400, violet500, 0.25);
 
@@ -167,21 +213,69 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const nightTints = mountainTints(nightHorizon);
   const dawnTints = mountainTints(dawnHorizon);
 
+  const duskShades = {
+    far: shadeTint(duskTints.far, duskHorizon),
+    mid: shadeTint(duskTints.mid, duskHorizon),
+    near: shadeTint(duskTints.near, duskHorizon),
+  };
+  const nightShades = {
+    far: shadeTint(nightTints.far, nightHorizon),
+    mid: shadeTint(nightTints.mid, nightHorizon),
+    near: shadeTint(nightTints.near, nightHorizon),
+  };
+  const dawnShades = {
+    far: shadeTint(dawnTints.far, dawnHorizon),
+    mid: shadeTint(dawnTints.mid, dawnHorizon),
+    near: shadeTint(dawnTints.near, dawnHorizon),
+  };
+
+  // Extra hue breakpoint inserted early in the sky gradient (12%, well
+  // before skyMid's 25%/skyBottom's 45% — see Wallpaper.css), so it only
+  // touches the upper quarter and never shifts when the vivid horizon
+  // color arrives relative to the mountain ridge line (Step 2). Dusk/dawn
+  // get a value close to a plain top->mid interpolation (near-invisible
+  // change); night's is deliberately pulled toward the icy-blue accent
+  // tokens.css calls out as needing "a real functional home," breaking up
+  // what was otherwise one continuous violet band top to bottom.
+  const duskSkyAccent = mixHex(indigo950, violet600, 0.5);
+  const nightSkyAccent = mixHex(violet800, ice500, 0.35);
+  const dawnSkyAccent = mixHex(indigo950, violet500, 0.45);
+
+  // Large, soft, low-opacity color masses screen-blended directly into
+  // the sky's own atmosphere layer (see .wallpaper__atmosphere) rather
+  // than distinct cloud-shaped objects sitting on top of the gradient —
+  // reads as depth/texture in the air, not decoration. Kept away from the
+  // ridge line and dim enough (opacity below) that they can't recreate
+  // the earlier "wispy halo around each peak" look.
+  const duskAtmosphereA = mixHex(horizonGold, magentaVivid400, 0.4);
+  const duskAtmosphereB = mixHex(violet500, magentaVivid400, 0.25);
+  const nightAtmosphereA = mixHex(violet800, ice500, 0.4);
+  const nightAtmosphereB = mixHex(violetShadow, violet600, 0.3);
+  const dawnAtmosphereA = mixHex(moonlightWarm, magentaVivid400, 0.35);
+  const dawnAtmosphereB = mixHex(violet500, moonlight, 0.3);
+
   return {
     dusk: {
       // The zenith stays near-black indigo across all three states (the
       // top of the sky barely changes through the night) — only the
       // horizon transforms, reinforcing "one continuous environment."
       skyTop: indigo950,
+      skyAccent: duskSkyAccent,
       skyMid: violet600,
       horizonColor: duskHorizon,
       // Reduced from 1 — now that the sky itself carries real vividness
       // up to the ridge line (Step 2), the glow is a contained accent at
       // the valley seam, not the thing doing all the color work.
       horizonGlowOpacity: 0.7,
-      farMountainTint: duskTints.far,
-      midMountainTint: duskTints.mid,
-      nearMountainTint: duskTints.near,
+      farMountainTop: duskShades.far.top,
+      farMountainBottom: duskShades.far.bottom,
+      midMountainTop: duskShades.mid.top,
+      midMountainBottom: duskShades.mid.bottom,
+      nearMountainTop: duskShades.near.top,
+      nearMountainBottom: duskShades.near.bottom,
+      atmosphereColorA: duskAtmosphereA,
+      atmosphereColorB: duskAtmosphereB,
+      atmosphereOpacity: 0.35,
       // Checked against real bounding boxes (Phase A.5), not eyeballed:
       // at 1280x800 the disc is 281.6px (radius 140.8px); the wordmark's
       // own rect top edge sits at y=312.4px; the right peak's apex (now
@@ -205,12 +299,21 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     },
     night: {
       skyTop: indigo950,
+      skyAccent: nightSkyAccent,
       skyMid: violet800,
       horizonColor: nightHorizon,
       horizonGlowOpacity: 0.3,
-      farMountainTint: nightTints.far,
-      midMountainTint: nightTints.mid,
-      nearMountainTint: nightTints.near,
+      farMountainTop: nightShades.far.top,
+      farMountainBottom: nightShades.far.bottom,
+      midMountainTop: nightShades.mid.top,
+      midMountainBottom: nightShades.mid.bottom,
+      nearMountainTop: nightShades.near.top,
+      nearMountainBottom: nightShades.near.bottom,
+      atmosphereColorA: nightAtmosphereA,
+      atmosphereColorB: nightAtmosphereB,
+      // Dimmer than dusk/dawn — night's atmosphere should stay a quiet
+      // texture, not compete with the stars for attention.
+      atmosphereOpacity: 0.18,
       // Center (486, 128): disc bottom = 128+140.8 = 268.8, clearing the
       // wordmark's 312.4px top edge by ~44px; distance to the left peak
       // apex (281.6, 320) is ~281px, clearing its 140.8px radius by
@@ -230,12 +333,19 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       // horizon, never fading toward pale/pastel, to keep the same
       // moody, nighttime-leaning world even in its lightest state.
       skyTop: indigo950,
+      skyAccent: dawnSkyAccent,
       skyMid: violet500,
       horizonColor: dawnHorizon,
       horizonGlowOpacity: 0.55,
-      farMountainTint: dawnTints.far,
-      midMountainTint: dawnTints.mid,
-      nearMountainTint: dawnTints.near,
+      farMountainTop: dawnShades.far.top,
+      farMountainBottom: dawnShades.far.bottom,
+      midMountainTop: dawnShades.mid.top,
+      midMountainBottom: dawnShades.mid.bottom,
+      nearMountainTop: dawnShades.near.top,
+      nearMountainBottom: dawnShades.near.bottom,
+      atmosphereColorA: dawnAtmosphereA,
+      atmosphereColorB: dawnAtmosphereB,
+      atmosphereOpacity: 0.28,
       // Center (358, 144): disc bottom = 144+140.8 = 284.8, clearing the
       // wordmark's 312.4px top edge by ~28px; distance to the left peak
       // apex (281.6, 320) is ~192px, clearing its 140.8px radius by
@@ -263,16 +373,27 @@ export function Wallpaper() {
   const horizonGlowInnerId = `${uid}-horizon-inner`;
   const horizonGlowOuterId = `${uid}-horizon-outer`;
   const starGlowId = `${uid}-star-glow`;
+  const farGradientId = `${uid}-far-gradient`;
+  const midGradientId = `${uid}-mid-gradient`;
+  const nearGradientId = `${uid}-near-gradient`;
 
   const { isIdle } = useWindowManager();
   const skyRef = useRef<HTMLDivElement>(null);
+  const atmosphereRef = useRef<HTMLDivElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
   const horizonGlowGroupRef = useRef<SVGGElement>(null);
   const horizonInnerStopRef = useRef<SVGStopElement>(null);
   const horizonOuterStopRef = useRef<SVGStopElement>(null);
-  const farRef = useRef<SVGPathElement>(null);
-  const midRef = useRef<SVGPathElement>(null);
-  const nearRef = useRef<SVGPathElement>(null);
+  // Each mountain layer is now a linearGradient (objectBoundingBox, top to
+  // bottom) instead of a flat fill — these are the two stops per layer,
+  // tweened independently so the ridge-top/base shading can differ from
+  // the flat tint that used to be the whole fill (see shadeTint).
+  const farTopStopRef = useRef<SVGStopElement>(null);
+  const farBottomStopRef = useRef<SVGStopElement>(null);
+  const midTopStopRef = useRef<SVGStopElement>(null);
+  const midBottomStopRef = useRef<SVGStopElement>(null);
+  const nearTopStopRef = useRef<SVGStopElement>(null);
+  const nearBottomStopRef = useRef<SVGStopElement>(null);
   const starsRef = useRef<SVGGElement>(null);
   const cycleIndexRef = useRef(0);
 
@@ -297,8 +418,21 @@ export function Wallpaper() {
           skyRef.current,
           {
             "--sky-top": scene.skyTop,
+            "--sky-accent": scene.skyAccent,
             "--sky-mid": scene.skyMid,
             "--sky-bottom": scene.horizonColor,
+            duration,
+          },
+          0,
+        );
+      }
+      if (atmosphereRef.current) {
+        tl.to(
+          atmosphereRef.current,
+          {
+            "--cloud-a": scene.atmosphereColorA,
+            "--cloud-b": scene.atmosphereColorB,
+            opacity: scene.atmosphereOpacity,
             duration,
           },
           0,
@@ -325,14 +459,47 @@ export function Wallpaper() {
           0,
         );
       }
-      if (farRef.current) {
-        tl.to(farRef.current, { fill: scene.farMountainTint, duration }, 0);
+      if (farTopStopRef.current) {
+        tl.to(
+          farTopStopRef.current,
+          { attr: { "stop-color": scene.farMountainTop }, duration },
+          0,
+        );
       }
-      if (midRef.current) {
-        tl.to(midRef.current, { fill: scene.midMountainTint, duration }, 0);
+      if (farBottomStopRef.current) {
+        tl.to(
+          farBottomStopRef.current,
+          { attr: { "stop-color": scene.farMountainBottom }, duration },
+          0,
+        );
       }
-      if (nearRef.current) {
-        tl.to(nearRef.current, { fill: scene.nearMountainTint, duration }, 0);
+      if (midTopStopRef.current) {
+        tl.to(
+          midTopStopRef.current,
+          { attr: { "stop-color": scene.midMountainTop }, duration },
+          0,
+        );
+      }
+      if (midBottomStopRef.current) {
+        tl.to(
+          midBottomStopRef.current,
+          { attr: { "stop-color": scene.midMountainBottom }, duration },
+          0,
+        );
+      }
+      if (nearTopStopRef.current) {
+        tl.to(
+          nearTopStopRef.current,
+          { attr: { "stop-color": scene.nearMountainTop }, duration },
+          0,
+        );
+      }
+      if (nearBottomStopRef.current) {
+        tl.to(
+          nearBottomStopRef.current,
+          { attr: { "stop-color": scene.nearMountainBottom }, duration },
+          0,
+        );
       }
       if (moonRef.current) {
         tl.to(
@@ -383,6 +550,8 @@ export function Wallpaper() {
     <div className="wallpaper" aria-hidden="true">
       <div ref={skyRef} className="wallpaper__sky" />
 
+      <div ref={atmosphereRef} className="wallpaper__atmosphere" />
+
       <svg
         className="wallpaper__stars-layer"
         viewBox="0 0 100 100"
@@ -410,6 +579,7 @@ export function Wallpaper() {
         <div className="wallpaper__moon-ring" />
         <div className="wallpaper__moon-disc" />
         <div className="wallpaper__moon-highlight" />
+        <div className="wallpaper__moon-glow2" />
       </div>
 
       <svg
@@ -433,6 +603,25 @@ export function Wallpaper() {
             <stop ref={horizonOuterStopRef} offset="0%" stopOpacity="0.55" />
             <stop offset="100%" stopOpacity="0" />
           </radialGradient>
+
+          {/* Per-layer internal shading (Step 3): objectBoundingBox means
+              y1=0/y2=1 always map to THIS shape's own top/bottom, so the
+              lighter "catch" sits at each layer's own ridge line and the
+              darker tone at its own base regardless of the wavy path
+              underneath — no manual masking needed. Hard edges BETWEEN
+              layers are untouched; this only varies color within one. */}
+          <linearGradient id={farGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop ref={farTopStopRef} offset="0%" />
+            <stop ref={farBottomStopRef} offset="100%" />
+          </linearGradient>
+          <linearGradient id={midGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop ref={midTopStopRef} offset="0%" />
+            <stop ref={midBottomStopRef} offset="100%" />
+          </linearGradient>
+          <linearGradient id={nearGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop ref={nearTopStopRef} offset="0%" />
+            <stop ref={nearBottomStopRef} offset="100%" />
+          </linearGradient>
         </defs>
 
         <g ref={horizonGlowGroupRef} className="wallpaper__horizon-glow">
@@ -446,11 +635,23 @@ export function Wallpaper() {
           <ellipse cx="50" cy="66" rx="10" ry="7" fill={`url(#${horizonGlowInnerId})`} />
         </g>
 
-        <path ref={farRef} className="wallpaper__mountain" d={FAR_MOUNTAIN_PATH} />
+        <path
+          className="wallpaper__mountain"
+          d={FAR_MOUNTAIN_PATH}
+          fill={`url(#${farGradientId})`}
+        />
 
-        <path ref={midRef} className="wallpaper__mountain" d={MID_MOUNTAIN_PATH} />
+        <path
+          className="wallpaper__mountain"
+          d={MID_MOUNTAIN_PATH}
+          fill={`url(#${midGradientId})`}
+        />
 
-        <path ref={nearRef} className="wallpaper__mountain" d={NEAR_MOUNTAIN_PATH} />
+        <path
+          className="wallpaper__mountain"
+          d={NEAR_MOUNTAIN_PATH}
+          fill={`url(#${nearGradientId})`}
+        />
       </svg>
     </div>
   );
