@@ -74,6 +74,7 @@ interface SceneConfig {
    *  ORIGINAL flat-fill silhouette language, before Step 3 added
    *  internal shading to the mountains themselves). */
   rockTint: string;
+  rockHighlight: string;
   /** Solid, crisply-edged cloud clusters beside the two peaks (not a
    *  blurred atmosphere blend) — see CLOUD_SHAPE_PATH. Each cloud gets
    *  the same top/bottom shading treatment as the mountains. */
@@ -161,15 +162,22 @@ const FAR_MOUNTAIN_PATH =
 const NEAR_MOUNTAIN_PATH =
   "M0,100 L0,88 C15,84 25,90 38,85 C50,80 62,88 75,83 C85,80 92,86 100,84 L100,100 Z";
 
-// A shallow, dark foreground strip below the near mountain — separate
-// silhouette, not a fix baked into the near layer itself, per the explicit
-// "add a rock/boulder or uneven terrain layer" direction. Small, irregular
-// bumps (unlike the mountains' broad curves) read as rocky/uneven ground
-// rather than another ridge. Confined to the bottom ~6% of the frame —
-// "a modest strip," not a fourth mountain layer.
+// A dark foreground strip below the near mountain — separate silhouette,
+// not a fix baked into the near layer itself, per the explicit "add a
+// rock/boulder or uneven terrain layer" direction.
+//
+// Was "M0,100 L0,96 C6,94 10,97 16,95 ... " — a top edge wandering only
+// y=93 to y=97 (4% of the frame) in smooth, near-mountain-style curves.
+// At full-frame view that read as "one flat dark curve with no
+// distinguishable second layer": too shallow to register as its own
+// shape, and (per rockTint above) too close in color to the near layer's
+// own bottom edge to read as a seam either. Widened to an 86-99 range
+// (13%) with sharper, uneven bump heights (unlike the mountains' broad
+// even curves) so it reads as jagged boulders/rocks, not another ridge.
 const ROCK_PATH =
-  "M0,100 L0,96 C6,94 10,97 16,95 C22,93 27,96 34,95 C40,94 45,97 52,95 " +
-  "C60,93 66,96 74,95 C82,94 88,97 94,95 C97,94 99,96 100,95 L100,100 Z";
+  "M0,100 L0,97 C4,94 7,98 11,96 C14,89 18,94 21,97 C25,93 29,98 33,95 " +
+  "C37,90 41,96 45,98 C50,93 54,97 58,94 C62,98 66,92 70,96 " +
+  "C74,99 78,94 82,97 C86,90 90,96 94,98 C97,94 99,97 100,96 L100,100 Z";
 
 // One puffy cloud silhouette, built like the old pine treeline was —
 // several overlapping rounded bumps merging into one shape via cubic
@@ -181,28 +189,42 @@ const CLOUD_SHAPE_PATH =
   "M4,19 C-2,19 -2,12 4,10 C3,3 13,0 18,5 C21,-3 33,-3 35,5 " +
   "C43,2 47,10 41,14 C47,15 46,20 39,20 L7,20 C2,20 1,20 4,19 Z";
 
-// Cloud clusters sit in the OPEN SKY beside each peak's outer slope, never
-// draped over the ridge or centered over the valley — the mid mountain's
-// left peak footprint spans roughly x=8-34 (apex at 22,40), the right
-// peak's spans roughly x=66-92 (apex at 78,40), so these sit outside that
-// footprint entirely, above the ridge line, and clear of the moon's own
-// x-range (28-68 across the three states) with margin to spare.
+// Cloud clusters sit in the OPEN SKY beside each peak's outer slope —
+// "beside," not "clipped to a sliver of open sky left of the peak": the
+// mid mountain's own top edge RISES steeply near each peak (e.g. left
+// side: y=70 at x=0, y=62 at x=8, y=40 at the x=22 apex), so at x<15 or
+// so there's already tens of units of open sky above the local terrain —
+// plenty of room for a much bigger cloud than the previous pass used
+// without it ever visually sitting on the rock. Clouds render BEFORE the
+// mountains in DOM order specifically so if a cloud's footprint ever did
+// graze the rising slope, the mountain silhouette occludes it cleanly
+// (never the reverse) — that safety net is what allows sizing these
+// generously instead of squeezing them into a tiny corner triangle.
+//
+// Previous pass put these at y=12-22 (near the very top of the frame,
+// per the "tucked in far corners, near the top edge" complaint) at scale
+// 0.11-0.16 (a ~5-8 unit wide puff — invisible without a zoomed crop).
+// Moved down to y=33-50 (roughly level with the peak apex at y=40 down
+// through its upper flank, i.e. "the horizon glow/mid-sky band, near
+// where the peaks meet the sky") and scaled up to 0.3-0.42 (a ~15-21
+// unit wide puff — clearly readable at normal size).
+//
 // CLOUD_SHAPE_PATH's own bbox is x:[-2,47] y:[-3,20] (49 wide, 23 tall) —
 // translate/scale below account for that so the visible puff actually
-// lands beside the peak rather than the transform origin doing so.
+// lands where intended rather than the transform origin doing so.
 const CLOUD_CLUSTERS: {
   x: number;
   y: number;
   scale: number;
 }[] = [
-  // Left cluster — two overlapping puffs whose right edges stay at/below
-  // x=6.5, clear of the left peak's own footprint starting at x=8.
-  { x: -1, y: 14, scale: 0.16 },
-  { x: -3, y: 22, scale: 0.11 },
-  // Right cluster — mirrored: left edges stay at/above x=93.5, clear of
-  // the right peak's footprint ending at x=92.
-  { x: 94, y: 12, scale: 0.15 },
-  { x: 97, y: 20, scale: 0.11 },
+  // Left cluster — two overlapping puffs beside the left peak's outer
+  // (left) flank, floating in open sky well clear of the rising terrain.
+  { x: -6, y: 33, scale: 0.42 },
+  { x: -11, y: 44, scale: 0.3 },
+  // Right cluster — mirrored, beside the right peak's outer (right)
+  // flank.
+  { x: 90, y: 33, scale: 0.42 },
+  { x: 97, y: 45, scale: 0.3 },
 ];
 
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
@@ -239,13 +261,26 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     };
   }
 
-  // The frontmost rock/terrain strip below the near mountain — darker
-  // than even the near layer (0.94 vs 0.85), since it's now a small
-  // confined strip rather than a large expanse, and stays a flat,
-  // hard-edged silhouette with no internal gradient (matching how the
-  // mountains themselves looked before Step 3's shading was added).
-  function rockTint(horizon: string) {
-    return mixHex(horizon, ink, 0.94);
+  // The frontmost rock/terrain strip below the near mountain. Was
+  // mixHex(horizon, ink, 0.94) computed independently from the horizon
+  // color — at that blend ratio it landed within a few rgb units of the
+  // near mountain's OWN bottom-edge shade (also blended heavily toward
+  // ink), so the two were nearly indistinguishable at the seam (the "one
+  // flat dark curve" complaint) despite being different colors on paper.
+  // Deriving the rock tint FROM the near layer's own bottom color instead
+  // of independently guarantees a real, visible step down in brightness
+  // regardless of the specific horizon hue in play. Still flat/hard-edged
+  // — no internal gradient, unlike the shaded mountains above it.
+  function rockTint(nearBottomColor: string) {
+    return mixHex(nearBottomColor, ink, 0.55);
+  }
+
+  // A thin, subtle highlight along the rock strip's own top edge (see
+  // .wallpaper__rocks stroke in Wallpaper.css) — a lighter tint than the
+  // rock fill itself, giving the seam against the mountain above it a
+  // visible edge rather than relying on fill-color contrast alone.
+  function rockHighlight(horizon: string) {
+    return mixHex(horizon, pearl, 0.25);
   }
 
   // Shades a flat tint into a top (ridge)/bottom (base) pair for the
@@ -303,18 +338,38 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const nightSkyAccent = mixHex(violet800, ice500, 0.35);
   const dawnSkyAccent = mixHex(indigo950, violet500, 0.45);
 
-  // Cloud base tint tied to each state's own horizon-glow color (same
-  // color-source logic as the mountains) so the clouds still belong to
-  // the same lit world instead of an independently-picked color. Shaded
-  // into a top (lit, toward pearl)/bottom (shadowed underside, toward
-  // ink) pair with the same shadeTint helper the mountains use — real
-  // cloud shading, not a flat single-tone shape.
-  const duskCloudColor = mixHex(horizonGold, magentaVivid400, 0.4);
-  const nightCloudColor = mixHex(violet800, ice500, 0.4);
-  const dawnCloudColor = mixHex(moonlightWarm, magentaVivid400, 0.35);
-  const duskCloudShade = shadeTint(duskCloudColor, pearl);
-  const nightCloudShade = shadeTint(nightCloudColor, pearl);
-  const dawnCloudShade = shadeTint(dawnCloudColor, pearl);
+  // Cloud base tint: mostly PEARL (bright, near-white) with only a
+  // minority tint of the state's own horizon color, rather than the
+  // previous horizon-majority mix. The clouds now sit at y=33-50 — right
+  // where the sky gradient is already transitioning toward its own most
+  // vivid horizon color (the --sky-mid -> --sky-bottom stretch, 25%-45%)
+  // — so a cloud tint built the SAME way as the sky/mountain tints (mostly
+  // horizon-derived) sits at nearly the same value/saturation as the sky
+  // behind it and disappears, which is exactly the low-contrast complaint.
+  // Real sunset/dawn clouds read as bright, lit objects against a deeply
+  // colored sky, not same-toned ones — so lean hard toward pearl for
+  // actual value contrast, and let the horizon-color minority keep them
+  // tied to the same light source without matching its depth of color.
+  const duskCloudColor = mixHex(pearl, duskHorizon, 0.35);
+  const nightCloudColor = mixHex(pearl, nightHorizon, 0.45);
+  const dawnCloudColor = mixHex(pearl, dawnHorizon, 0.3);
+  // Shaded lit-top (further toward pearl, brighter still)/shadowed-
+  // underside (toward this state's own horizon color — a richer, more
+  // saturated shadow rather than flat ink, keeping the underside tied to
+  // the same light source) — real cloud shading, still readably lighter
+  // than the sky at every point on the shape.
+  const duskCloudShade = {
+    top: mixHex(duskCloudColor, pearl, 0.35),
+    bottom: mixHex(duskCloudColor, duskHorizon, 0.4),
+  };
+  const nightCloudShade = {
+    top: mixHex(nightCloudColor, pearl, 0.35),
+    bottom: mixHex(nightCloudColor, nightHorizon, 0.4),
+  };
+  const dawnCloudShade = {
+    top: mixHex(dawnCloudColor, pearl, 0.35),
+    bottom: mixHex(dawnCloudColor, dawnHorizon, 0.4),
+  };
 
   return {
     dusk: {
@@ -335,7 +390,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: duskShades.mid.bottom,
       nearMountainTop: duskShades.near.top,
       nearMountainBottom: duskShades.near.bottom,
-      rockTint: rockTint(duskHorizon),
+      rockTint: rockTint(duskShades.near.bottom),
+      rockHighlight: rockHighlight(duskHorizon),
       cloudTop: duskCloudShade.top,
       cloudBottom: duskCloudShade.bottom,
       // Most present at dusk — warm, golden-lit clouds catching the last
@@ -374,7 +430,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: nightShades.mid.bottom,
       nearMountainTop: nightShades.near.top,
       nearMountainBottom: nightShades.near.bottom,
-      rockTint: rockTint(nightHorizon),
+      rockTint: rockTint(nightShades.near.bottom),
+      rockHighlight: rockHighlight(nightHorizon),
       cloudTop: nightCloudShade.top,
       cloudBottom: nightCloudShade.bottom,
       // Most subdued — dim, barely-lit silhouettes that don't compete
@@ -409,7 +466,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: dawnShades.mid.bottom,
       nearMountainTop: dawnShades.near.top,
       nearMountainBottom: dawnShades.near.bottom,
-      rockTint: rockTint(dawnHorizon),
+      rockTint: rockTint(dawnShades.near.bottom),
+      rockHighlight: rockHighlight(dawnHorizon),
       cloudTop: dawnCloudShade.top,
       cloudBottom: dawnCloudShade.bottom,
       // Present, cooler-lit than dusk's golden version — per "more
@@ -563,7 +621,11 @@ export function Wallpaper() {
         );
       }
       if (rockRef.current) {
-        tl.to(rockRef.current, { fill: scene.rockTint, duration }, 0);
+        tl.to(
+          rockRef.current,
+          { fill: scene.rockTint, stroke: scene.rockHighlight, duration },
+          0,
+        );
       }
       if (cloudTopStopRef.current) {
         tl.to(

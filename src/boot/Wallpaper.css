@@ -89,14 +89,24 @@
    in SVG, even though this class was written before the gradient/shading
    fill existed). */
 
-/* .wallpaper__clouds and .wallpaper__rocks carry no rules here — both are
-   plain opaque SVG fills (a shared linearGradient for the cloud puffs, a
-   flat tweened fill for the rock strip; see Wallpaper.tsx), deliberately
-   with no blur/mix-blend-mode so they read as solid objects rather than
-   the horizon glow/halo's soft screen-blended light. Class names exist
-   only as JS-side hooks/markers. Group opacity for the clouds (the
+/* .wallpaper__clouds carries no rule here — a plain opaque SVG fill (the
+   shared cloudGradientId linearGradient; see Wallpaper.tsx), deliberately
+   with no blur/mix-blend-mode so it reads as a solid object rather than
+   the horizon glow/halo's soft screen-blended light. Group opacity (the
    per-state "more present at dusk/dawn, more subdued at night" dial) is
    tweened directly via GSAP rather than a CSS custom property. */
+
+/* Fill is tweened directly (flat, no gradient — see rockTint), but the
+   thin edge highlight along the rock strip's own top boundary lives here:
+   a stroke (also tweened, via scene.rockHighlight) is what makes the seam
+   against the mountain above legible even where the two fill colors sit
+   close in value. Small stroke-width so it reads as a rim, not an outline
+   around the whole shape. */
+.wallpaper__rocks {
+  stroke-width: 0.5;
+  stroke-opacity: 0.6;
+  stroke-linejoin: round;
+}
 
 /* The moving celestial body — a reflecting glossy sphere, never a light
    source itself (§4 reserves that for the wordmark alone). Built as
