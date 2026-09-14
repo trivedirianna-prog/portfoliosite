@@ -1,1 +1,40 @@
 @import "../sectionObject.css";
+
+/* Glossy recipe, cool: plum-800 -> ice-500 — the muted icy-blue accent
+   tokens.css calls out as needing "a real functional home," here on the
+   one object whose whole premise (a signal/transmission device) is cool
+   and technical rather than warm. */
+.contact-object__stop-a {
+  stop-color: var(--color-plum-800);
+}
+.contact-object__stop-b {
+  stop-color: var(--color-ice-500);
+}
+
+.contact-object__antenna {
+  stroke: var(--color-chrome-300);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.contact-object__antenna-tip {
+  fill: var(--color-chrome-300);
+}
+
+.contact-object__display {
+  fill: var(--color-ink);
+  opacity: 0.55;
+}
+.contact-object__indicator {
+  fill: var(--color-ice-300);
+}
+
+/* Catch-light + secondary glow — same screen-blended recipe as
+   .material-glossy::before/::after. */
+.contact-object__highlight {
+  fill: rgba(255, 255, 255, 0.92);
+  mix-blend-mode: screen;
+}
+.contact-object__glow2 {
+  fill: rgba(255, 255, 255, 0.25);
+  mix-blend-mode: screen;
+}

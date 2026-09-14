@@ -1,8 +1,22 @@
 /*
-  Shared placeholder geometry for the five section objects. Each section
-  keeps its own .css file for the distinct silhouette it will eventually
-  need (§8) — this shared base only exists so five scaffold placeholders
-  don't repeat identical box styling.
+  Shared geometry for the five section objects (§8). Each section keeps
+  its own .css file for its distinct silhouette/material colors — this
+  shared base only holds what's genuinely common: the uniform bounding
+  footprint (all five differ in silhouette, not in size), the caption
+  position, and the SVG art element's shadow/hover-transition mechanics.
+
+  Real silhouettes (first pass, §8.1-8.5) replaced the identical
+  rounded-rect placeholders every section used to render via
+  .material-glossy/.material-paper directly on this wrapper — applying
+  those classes here would paint a literal rounded-rect card BEHIND each
+  irregular shape, which is exactly what "not rectangles with varied
+  proportions" rules out. Instead, each section's own SVG reproduces the
+  same two material RECIPES from materials.css (glossy: gradient fill +
+  one tight near-white catch-light + one fainter secondary glow, both
+  screen-blended; paper: flat/soft-gradient pearl tones + a thin ink
+  border) directly on its own bespoke shape, so the material LANGUAGE
+  stays identical even though the literal CSS classes don't apply to an
+  irregular path the way they do to a rounded rect.
 */
 
 .section-object {
@@ -16,6 +30,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.section-object__art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* Approximates --shadow-object-resting's own (non-inset) layer — a
+     shape-following drop-shadow instead of box-shadow, since these are
+     no longer rounded rects that a rectangular box-shadow would suit. */
+  filter: drop-shadow(0 8px 24px rgba(20, 6, 24, 0.45));
+  transition:
+    transform var(--duration-standard) var(--ease-standard),
+    filter var(--duration-standard) var(--ease-standard);
+}
+
+/* Glossy family hover — same lift as .material-glossy:hover. */
+.section-object--projects:hover .section-object__art,
+.section-object--contact:hover .section-object__art {
+  transform: translateY(-4px);
+  filter: drop-shadow(0 20px 48px rgba(20, 6, 24, 0.55));
+}
+
+/* Paper family hover — same lift+rotate as .material-paper:hover. */
+.section-object--about:hover .section-object__art,
+.section-object--education:hover .section-object__art,
+.section-object--committees:hover .section-object__art {
+  transform: translateY(-2px) rotate(-0.3deg);
+  filter: drop-shadow(0 20px 48px rgba(20, 6, 24, 0.55));
 }
 
 .section-object__caption {

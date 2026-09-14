@@ -1,1 +1,22 @@
 @import "../sectionObject.css";
+
+.education-object__card {
+  fill: var(--color-surface-paper-alt);
+}
+
+.education-object__line {
+  stroke: var(--color-text-on-paper-dim);
+  stroke-width: 1.4;
+  opacity: 0.4;
+}
+
+.education-object__stamp-ring {
+  fill: none;
+  stroke: var(--color-text-on-paper);
+  stroke-width: 0.8;
+  opacity: 0.4;
+}
+.education-object__stamp {
+  fill: var(--color-magenta-600);
+  opacity: 0.85;
+}

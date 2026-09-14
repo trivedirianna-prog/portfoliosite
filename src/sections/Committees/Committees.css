@@ -1,1 +1,26 @@
 @import "../sectionObject.css";
+
+.committees-object__card {
+  stroke: var(--color-text-on-paper-dim);
+  stroke-width: 0.6;
+  stroke-opacity: 0.3;
+}
+.committees-object__card--a {
+  fill: var(--color-surface-paper);
+}
+.committees-object__card--b {
+  fill: var(--color-surface-paper-alt);
+}
+
+.committees-object__line {
+  stroke: var(--color-text-on-paper-dim);
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.committees-object__wallet {
+  fill: var(--color-chrome-100);
+}
+.committees-object__stripe {
+  fill: var(--color-plum-600);
+}

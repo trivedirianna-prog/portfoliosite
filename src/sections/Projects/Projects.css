@@ -1,1 +1,54 @@
 @import "../sectionObject.css";
+
+/* Glossy recipe, warm: case body plum-700 -> magenta-600 (the richest,
+   most saturated surface, since it's the front-facing hero plane); lid
+   a darker/muted plum-800 -> plum-600 so the open flap reads as a
+   secondary plane, not competing with the case body; disc reversed
+   (magenta-600 -> plum-700) so it's a distinct object from the case
+   rather than a same-gradient continuation. */
+.projects-object__stop-case-a {
+  stop-color: var(--color-plum-700);
+}
+.projects-object__stop-case-b {
+  stop-color: var(--color-magenta-600);
+}
+.projects-object__stop-lid-a {
+  stop-color: var(--color-plum-800);
+}
+.projects-object__stop-lid-b {
+  stop-color: var(--color-plum-600);
+}
+.projects-object__stop-disc-a {
+  stop-color: var(--color-magenta-600);
+}
+.projects-object__stop-disc-b {
+  stop-color: var(--color-plum-700);
+}
+
+.projects-object__hub {
+  fill: var(--color-ink);
+}
+
+/* Ring text — monospace per the design's "system fingerprint" accent
+   (§11), sized in the SVG's own user units (16-radius ring) rather than
+   reusing .label-mono's rem-based caption size, which is tuned for text
+   sitting below the object, not wrapped around a small disc. */
+.projects-object__ring-text {
+  font-family: var(--font-mono);
+  font-size: 3.6px;
+  letter-spacing: 0.04em;
+  fill: var(--color-chrome-100);
+  opacity: 0.75;
+}
+
+/* Catch-light + secondary glow — same recipe as .material-glossy::before/
+   ::after: one tight near-white highlight, one fainter diagonal glow,
+   both screen-blended so they add light rather than flatly tint. */
+.projects-object__highlight {
+  fill: rgba(255, 255, 255, 0.92);
+  mix-blend-mode: screen;
+}
+.projects-object__glow2 {
+  fill: rgba(255, 255, 255, 0.25);
+  mix-blend-mode: screen;
+}
