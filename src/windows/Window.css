@@ -1,15 +1,84 @@
+/*
+  Generic window chrome (§7.3). The body itself (children) is unstyled
+  here — .window only owns positioning/stacking/shadow and the floating
+  label+controls chip, which is what stays identical across every
+  window shape.
+*/
+
 .window {
-  position: absolute;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: var(--z-windows);
-  background: var(--color-surface-paper);
-  box-shadow: var(--shadow-window);
-  border-radius: var(--radius-lg);
+  /* Shape-following shadow (irregular silhouettes, e.g. the journal,
+     wouldn't suit a rectangular box-shadow) — same non-inset layer
+     --shadow-window itself uses. */
+  filter: drop-shadow(0 24px 64px rgba(10, 3, 14, 0.6));
 }
 
-.window__title {
-  padding: var(--space-2) var(--space-4);
+.window--focused {
+  z-index: var(--z-window-focused);
 }
 
-.window__content {
-  padding: var(--space-4);
+/* The one shared "lighting/glossiness" treatment every window uses
+   regardless of its own shape — same recipe as .material-glossy's own
+   flat-plastic + single sheen language (materials.css), applied here to
+   the label chip rather than to the (shape-variable) body underneath. */
+.window__chrome {
+  position: absolute;
+  top: calc(-1 * var(--space-8));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.1)),
+    var(--color-surface-glossy-flat);
+  box-shadow:
+    var(--shadow-object-resting),
+    inset 0 1px 0 var(--color-border-glossy-highlight);
+  white-space: nowrap;
+  transition: box-shadow var(--duration-standard) var(--ease-standard);
+}
+
+.window--focused .window__chrome {
+  box-shadow:
+    var(--shadow-object-lifted),
+    inset 0 1px 0 var(--color-border-glossy-highlight);
+}
+
+.window__label {
+  color: var(--color-text-on-dark);
+}
+
+.window__controls {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.window__control {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.85), transparent 70%),
+    var(--color-chrome-300);
+}
+
+.window__control--close {
+  background-color: var(--color-magenta-500);
+}
+
+.window__control--minimize {
+  background-color: var(--color-ice-400);
+}
+
+.window__body {
+  position: relative;
 }
