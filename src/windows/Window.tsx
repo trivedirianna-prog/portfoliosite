@@ -89,6 +89,14 @@ interface WindowProps {
   /** The spawning object's screen rect (see WindowManager.originRects) —
    *  when present, this window emerges from/retracts to it. */
   originRect?: OriginRect | null;
+  /** Whether the OPEN animation emerges from `originRect` (default,
+   *  matching every other window's initial appearance). Set false for a
+   *  window whose one spawning object sits off in a corner (§3's scatter
+   *  layout) and shouldn't read as "anchored" there even momentarily —
+   *  it then simply grows in already centered instead. The CLOSE
+   *  retract-to-icon motion is unaffected either way and still uses
+   *  `originRect` whenever it's present. */
+  openFromOrigin?: boolean;
   /** An optional third title-bar control, sharing the exact same chip
    *  treatment as minimize/close (§7.3's "shared system fingerprint" —
    *  every window uses the same title-label/lighting/glossiness
@@ -120,6 +128,7 @@ export function Window({
   onMinimize,
   style,
   originRect,
+  openFromOrigin = true,
   extraControl,
   children,
 }: WindowProps) {
@@ -135,7 +144,7 @@ export function Window({
     const el = rootRef.current;
     if (!el) return;
 
-    if (originRect) {
+    if (originRect && openFromOrigin) {
       const rect = el.getBoundingClientRect();
       const dx = originRect.x + originRect.width / 2 - (rect.x + rect.width / 2);
       const dy = originRect.y + originRect.height / 2 - (rect.y + rect.height / 2);
@@ -147,6 +156,26 @@ export function Window({
       gsap.fromTo(
         el,
         { xPercent: -50, yPercent: -50, x: dx, y: dy, scale: startScale, opacity: 0 },
+        {
+          xPercent: -50,
+          yPercent: -50,
+          x: 0,
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: OPEN_DURATION,
+          ease: "power2.out",
+        },
+      );
+    } else if (originRect) {
+      // openFromOrigin is false: this window's own centered resting spot
+      // IS its open position (no emerge-from-icon travel) — a plain
+      // grow-in-place, still establishing GSAP's continuous ownership of
+      // the transform (needed for Draggable) from these same resting
+      // x/y values rather than the icon's.
+      gsap.fromTo(
+        el,
+        { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 0.94, opacity: 0 },
         {
           xPercent: -50,
           yPercent: -50,

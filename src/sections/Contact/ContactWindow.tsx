@@ -22,6 +22,12 @@ type SendStatus = "idle" | "sending" | "success" | "error";
   per §8.5: a functional form (name/email/a themed message field) and,
   separately below it, a plain footnote/signature block — not folded into
   the form fields themselves.
+
+  `openFromOrigin={false}` — unlike every other window, this one opens
+  already centered rather than emerging from its spawning object's own
+  desktop position (the device sits off in a scattered corner per §3;
+  the window shouldn't read as anchored there even momentarily). Closing
+  still retracts back to the device via the same `originRect`, unaffected.
 */
 export function ContactWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
@@ -59,6 +65,7 @@ export function ContactWindow({ windowId }: { windowId: string }) {
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
       originRect={originRects.contact ?? null}
+      openFromOrigin={false}
       style={{ width: "min(92vw, 420px)" }}
     >
       <div className="contact-window">
