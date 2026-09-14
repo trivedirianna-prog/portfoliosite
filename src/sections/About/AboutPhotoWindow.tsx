@@ -12,10 +12,11 @@ import "./AboutPhotoWindow.css";
   editorial/physical than the plain content window: a thick pearl mat/
   border like a printed photo, and `emphasis` for a heavier shadow.
 
-  Positioned/rotated as the EMPHASIS half of the editorial cluster
+  Positioned as the EMPHASIS half of the editorial cluster
   (windowCluster.ts) — overlapping a real portion of AboutWindow's edge,
-  rotated the opposite direction, at a more modest size gap than the
-  first version of this window used.
+  at a more modest size gap than the first version of this window used.
+  Upright, not rotated — the cluster feeling comes from offset position
+  and real overlap alone.
 
   STILL A PLACEHOLDER: no real photo has been supplied yet. Per
   explicit direction, this project never generates/invents an image —
@@ -36,7 +37,6 @@ export function AboutPhotoWindow({ windowId }: { windowId: string }) {
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
       style={CLUSTER_EMPHASIS.style}
-      rotate={CLUSTER_EMPHASIS.rotate}
     >
       <div className="about-photo-window">
         <div className="about-photo-window__mat">
