@@ -35,10 +35,30 @@
   --color-pearl-dim: #e9dce6;
   --color-chrome-100: #e4e1ea;
   --color-chrome-300: #b8b3c4;
-  --color-ink: #150a1b;
+  /* Genuinely near-black, not a dark mid-tone — this is the foreground
+     silhouette/shadow color, so it needs real depth. */
+  --color-ink: #0a0410;
+
+  /* --- Color: wallpaper environment (deliberately more saturated than
+     the UI chrome palette above) ---
+     The wallpaper (§5) is the site's richest, most atmospheric surface
+     (§1.1: "strong sense of depth and lighting"), while materials/cursor
+     stay flatter and more restrained by design (see materials.css) — so
+     this gets its own more vivid range rather than reusing the muted UI
+     tones and reading dull/muddy by comparison. */
+  --color-indigo-950: #0b051c;
+  --color-violet-800: #2c1350;
+  --color-violet-600: #4a1f78;
+  --color-violet-500: #6a2aa0;
+  --color-violet-shadow: #4a1a52;
+  --color-magenta-vivid-700: #6b2170;
+  --color-magenta-vivid-600: #d6237e;
+  --color-magenta-vivid-400: #ff6fa8;
+  --color-moonlight: #e9dbff;
+  --color-moonlight-warm: #ffd9ef;
 
   /* --- Semantic color roles --- */
-  --color-bg-canvas: var(--color-plum-950);
+  --color-bg-canvas: var(--color-indigo-950);
   --color-bg-canvas-alt: var(--color-plum-900);
 
   --color-surface-glossy-a: var(--color-plum-600);

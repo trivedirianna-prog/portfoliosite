@@ -1,4 +1,5 @@
 import { sectionRegistry, sectionComponents } from "../sections";
+import { Wordmark } from "./Wordmark";
 import "./Desktop.css";
 
 /*
@@ -23,7 +24,9 @@ const TEMP_OFFSETS: Record<string, { top: string; left: string }> = {
 export function Desktop() {
   return (
     <div className="desktop">
-      <div className="desktop__wordmark type-display">RIANNA TRIVEDI</div>
+      <div className="desktop__wordmark">
+        <Wordmark />
+      </div>
       <div className="desktop__objects">
         {sectionRegistry.map((section) => {
           const SectionComponent = sectionComponents[section.id];

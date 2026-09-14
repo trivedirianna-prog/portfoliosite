@@ -11,6 +11,10 @@
     terminal/hacker typeface.
   - Critical constraint: monospace stays in small doses — labels, tiny
     captions — never body copy, never a full block of monospace text.
+  - Script accent (Mrs Saint Delafield): a dedicated typographic voice for
+    the main "Rianna Trivedi" wordmark ONLY (src/desktop/Wordmark.tsx).
+    Not a system-wide swap — every other heading/body/label keeps using
+    the editorial serif or monospace above exactly as before.
 */
 
 @import "@fontsource/fraunces/400.css";
@@ -19,10 +23,14 @@
 @import "@fontsource/fraunces/600.css";
 @import "@fontsource/space-mono/400.css";
 @import "@fontsource/space-mono/700.css";
+@import "@fontsource/mrs-saint-delafield/400.css";
 
 :root {
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-mono: "Space Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  /* Wordmark-only — see note above. Never reference this outside
+     src/desktop/Wordmark.tsx. */
+  --font-script: "Mrs Saint Delafield", cursive;
 
   --weight-serif-regular: 400;
   --weight-serif-medium: 500;

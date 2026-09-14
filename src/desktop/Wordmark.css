@@ -1,0 +1,39 @@
+/*
+  The wordmark's own visual treatment — script typeface, glow, bloom.
+  Sizing is a starting point to eyeball per the design spec's own
+  instruction, not a fixed rule: script letterforms with connecting
+  strokes/flourishes read differently than the editorial serif did at
+  the same measurement.
+*/
+
+.wordmark {
+  display: block;
+  width: clamp(360px, 40vw, 820px);
+  height: auto;
+  overflow: visible; /* let the blurred bloom extend past the tight viewBox */
+  pointer-events: none;
+}
+
+.wordmark__glyphs {
+  font-family: var(--font-script);
+  font-size: 150px;
+  fill: var(--color-pearl);
+}
+
+.wordmark__glyphs--crisp {
+  stroke: var(--color-pearl);
+  stroke-width: 1.5;
+}
+
+/* The bloom duplicate — warmer and softer than the crisp foreground copy,
+   since this is the "emits light" layer (§4) rather than the readable
+   letterform itself. */
+.wordmark__glow .wordmark__glyphs {
+  fill: color-mix(in srgb, var(--color-pearl) 65%, var(--color-magenta-300) 35%);
+  stroke: none;
+}
+
+.wordmark__ambient-glow {
+  fill: color-mix(in srgb, var(--color-magenta-300) 55%, var(--color-pearl) 45%);
+  opacity: 0.5;
+}

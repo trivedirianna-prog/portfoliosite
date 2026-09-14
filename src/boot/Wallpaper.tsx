@@ -39,6 +39,7 @@ const HOLD_MS = 20000;
 
 interface SceneConfig {
   skyTop: string;
+  skyMid: string;
   skyBottom: string;
   farMountainTint: string;
   midMountainTint: string;
@@ -100,36 +101,46 @@ const MID_MOUNTAIN_PATH =
 const NEAR_TREELINE_PATH = buildTreelinePath(92, 9, 40);
 
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
-  const plum800 = getCssVar("--color-plum-800");
-  const plum700 = getCssVar("--color-plum-700");
-  const magenta600 = getCssVar("--color-magenta-600");
-  const magenta400 = getCssVar("--color-magenta-400");
-  const magenta300 = getCssVar("--color-magenta-300");
-  const ice400 = getCssVar("--color-ice-400");
-  const ice300 = getCssVar("--color-ice-300");
+  const indigo950 = getCssVar("--color-indigo-950");
+  const violet800 = getCssVar("--color-violet-800");
+  const violet600 = getCssVar("--color-violet-600");
+  const violet500 = getCssVar("--color-violet-500");
+  const violetShadow = getCssVar("--color-violet-shadow");
+  const magentaVivid700 = getCssVar("--color-magenta-vivid-700");
+  const magentaVivid600 = getCssVar("--color-magenta-vivid-600");
+  const magentaVivid400 = getCssVar("--color-magenta-vivid-400");
+  const moonlight = getCssVar("--color-moonlight");
+  const moonlightWarm = getCssVar("--color-moonlight-warm");
   const ink = getCssVar("--color-ink");
 
   // Atmospheric perspective: each layer's tint is a blend of THIS state's
   // own horizon color and ink — more haze (less ink) the farther back the
   // layer sits — so the mountains automatically stay tonally consistent
   // with whichever sky they're in front of, rather than needing separate
-  // hand-picked colors per layer per state.
+  // hand-picked colors per layer per state. Wider spread (0.35/0.72/0.96)
+  // than a soft blend, so each layer reads as a distinct flat, hard-edged
+  // shape rather than fading into its neighbor.
   function mountainTints(skyBottom: string) {
     return {
-      far: mixHex(skyBottom, ink, 0.55),
-      mid: mixHex(skyBottom, ink, 0.78),
-      near: mixHex(skyBottom, ink, 0.94),
+      far: mixHex(skyBottom, ink, 0.35),
+      mid: mixHex(skyBottom, ink, 0.72),
+      near: mixHex(skyBottom, ink, 0.96),
     };
   }
 
-  const duskTints = mountainTints(magenta600);
-  const nightTints = mountainTints(plum800);
-  const dawnTints = mountainTints(magenta300);
+  const duskTints = mountainTints(magentaVivid600);
+  const nightTints = mountainTints(violet800);
+  const dawnTints = mountainTints(magentaVivid400);
 
   return {
     dusk: {
-      skyTop: plum800,
-      skyBottom: magenta600,
+      // The zenith stays near-black indigo across all three states (the
+      // top of the sky barely changes through the night) — only the
+      // horizon band transforms, which is what actually reads as "time
+      // passing" in one continuous environment rather than a hue swap.
+      skyTop: indigo950,
+      skyMid: violet600,
+      skyBottom: magentaVivid600,
       farMountainTint: duskTints.far,
       midMountainTint: duskTints.mid,
       nearMountainTint: duskTints.near,
@@ -138,29 +149,35 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       // Dim / just becoming visible — a muted, low-contrast disc rather
       // than a faded-out (transparent) one; the sphere itself is always
       // solid, only its illumination changes.
-      moonLightColor: mixHex(magenta300, plum700, 0.5),
-      moonShadowColor: plum700,
-      haloColor: magenta400,
-      haloOpacity: 0.25,
+      moonLightColor: mixHex(moonlightWarm, violetShadow, 0.45),
+      moonShadowColor: violetShadow,
+      haloColor: magentaVivid600,
+      haloOpacity: 0.3,
       starOpacity: 0.15,
     },
     night: {
-      skyTop: getCssVar("--color-plum-950"),
-      skyBottom: plum800,
+      skyTop: indigo950,
+      skyMid: violet800,
+      skyBottom: magentaVivid700,
       farMountainTint: nightTints.far,
       midMountainTint: nightTints.mid,
       nearMountainTint: nightTints.near,
       moonTop: 26,
       moonLeft: 40,
-      moonLightColor: ice300,
-      moonShadowColor: plum700,
-      haloColor: ice300,
-      haloOpacity: 0.6,
+      moonLightColor: moonlight,
+      moonShadowColor: violetShadow,
+      haloColor: moonlight,
+      haloOpacity: 0.65,
       starOpacity: 0.85,
     },
     dawn: {
-      skyTop: ice300,
-      skyBottom: magenta300,
+      // Still near-black indigo at the zenith and a genuinely saturated
+      // violet band — brightening/warming toward vivid pink at the
+      // horizon, never fading toward pale/pastel, to keep the same
+      // moody, nighttime-leaning world even in its lightest state.
+      skyTop: indigo950,
+      skyMid: violet500,
+      skyBottom: magentaVivid400,
       farMountainTint: dawnTints.far,
       midMountainTint: dawnTints.mid,
       nearMountainTint: dawnTints.near,
@@ -171,11 +188,11 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       moonLeft: 20,
       // Fading — cooler-meets-warmer transitional tone, still a solid,
       // medium-bright disc rather than one dissolving into transparency.
-      moonLightColor: mixHex(ice300, magenta300, 0.35),
-      moonShadowColor: magenta600,
-      haloColor: mixHex(ice400, magenta300, 0.4),
-      haloOpacity: 0.3,
-      starOpacity: 0.05,
+      moonLightColor: mixHex(moonlight, moonlightWarm, 0.5),
+      moonShadowColor: mixHex(violetShadow, magentaVivid700, 0.4),
+      haloColor: moonlightWarm,
+      haloOpacity: 0.4,
+      starOpacity: 0.08,
     },
   };
 }
@@ -213,7 +230,12 @@ export function Wallpaper() {
       if (skyRef.current) {
         tl.to(
           skyRef.current,
-          { "--sky-top": scene.skyTop, "--sky-bottom": scene.skyBottom, duration },
+          {
+            "--sky-top": scene.skyTop,
+            "--sky-mid": scene.skyMid,
+            "--sky-bottom": scene.skyBottom,
+            duration,
+          },
           0,
         );
       }
