@@ -69,11 +69,13 @@ interface SceneConfig {
   midMountainBottom: string;
   nearMountainTop: string;
   nearMountainBottom: string;
-  /** Frontmost rock/terrain silhouette below the near mountain layer —
-   *  flat, hard-edged, no internal gradient (matches the mountains'
-   *  ORIGINAL flat-fill silhouette language, before Step 3 added
-   *  internal shading to the mountains themselves). */
-  rockTint: string;
+  /** Frontmost jagged ridge below the near mountain layer — same
+   *  linearGradient top/bottom shading technique as far/mid/near (see
+   *  shadeTint), NOT a flat fill. Its base tint is pulled lighter than a
+   *  prior near-black version while still reading as the frontmost,
+   *  darkest-leaning layer overall. */
+  rockTop: string;
+  rockBottom: string;
   /** Solid, crisply-edged cloud clusters beside the two peaks (not a
    *  blurred atmosphere blend) — see CLOUD_SHAPE_PATH. Each cloud gets
    *  the same top/bottom shading treatment as the mountains. */
@@ -174,27 +176,22 @@ const STAR_SPARKLE_PATH =
   "M0,-1 C0.18,-0.18 0.18,-0.18 1,0 C0.18,0.18 0.18,0.18 0,1 " +
   "C-0.18,0.18 -0.18,0.18 -1,0 C-0.18,-0.18 -0.18,-0.18 0,-1 Z";
 
-// A dark foreground strip below the near mountain — separate silhouette,
-// not a fix baked into the near layer itself, per the explicit "add a
+// A foreground ridge below the near mountain — separate silhouette, not a
+// fix baked into the near layer itself, per the explicit "add a
 // rock/boulder or uneven terrain layer" direction.
 //
-// Went through two prior versions: first a smooth 4%-range curve (too
-// shallow to register as its own shape at all), then a sharp, many-bump
-// jagged silhouette (overcorrected — read as spiky rather than "rocky").
-// This version splits the difference: a handful of broad, gentle bumps
-// (top edge wandering y=82-90, calmer than the jagged version but still
-// clearly uneven, never a dead-straight line — and its highest points
-// stay 2 units below the near mountain's own highest points at y=80, so
-// it never pokes above the silhouette in front of which it sits) and —
-// the main change — a much taller overall band (top edge averaging ~86
-// vs. the previous ~92) so it actually fills the lower frame instead of
-// reading as a thin trim. Contrast against the near mountain comes from
-// rockTint's own value step alone now — no highlight stroke/seam line
-// (removed; it read as an artificial outline rather than a natural
-// boundary).
+// Built the same way MID_MOUNTAIN_PATH is: straight-line (L) segments
+// meeting at sharp vertices, not smooth bezier curves — a genuine jagged
+// ridge silhouette rather than rolling foothills. Top edge zigzags
+// between y=82 and y=90 (never above the near mountain's own highest
+// points at y=80, so it stays visually behind/below the silhouette in
+// front of which it sits), with a taller overall band than the mountains
+// above it so it actually fills the lower frame. No highlight stroke or
+// seam line — contrast against the near mountain comes from the fill
+// gradient's own value alone (see rockTint/shadeTint below).
 const ROCK_PATH =
-  "M0,100 L0,88 C15,84 28,90 42,86 C55,82 68,88 82,85 " +
-  "C90,83 95,87 100,85 L100,100 Z";
+  "M0,100 L0,88 L8,84 L16,90 L24,82 L32,88 L40,85 L48,90 L56,83 " +
+  "L64,89 L72,85 L80,90 L88,84 L94,88 L100,85 L100,100 Z";
 
 // One puffy cloud silhouette, built like the old pine treeline was —
 // several overlapping rounded bumps merging into one shape via cubic
@@ -278,18 +275,12 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     };
   }
 
-  // The frontmost rock/terrain strip below the near mountain. Was
-  // mixHex(horizon, ink, 0.94) computed independently from the horizon
-  // color — at that blend ratio it landed within a few rgb units of the
-  // near mountain's OWN bottom-edge shade (also blended heavily toward
-  // ink), so the two were nearly indistinguishable at the seam (the "one
-  // flat dark curve" complaint) despite being different colors on paper.
-  // Deriving the rock tint FROM the near layer's own bottom color instead
-  // of independently guarantees a real, visible step down in brightness
-  // regardless of the specific horizon hue in play. Still flat/hard-edged
-  // — no internal gradient, unlike the shaded mountains above it.
-  function rockTint(nearBottomColor: string) {
-    return mixHex(nearBottomColor, ink, 0.55);
+  // The frontmost ridge's own base tint — same 0.85 ink-blend as the near
+  // mountain's own base (mountainTints above), so its DARKEST point stays
+  // in parity with "frontmost/darkest-leaning" rather than drifting
+  // lighter than the mountains behind it.
+  function rockTint(horizon: string) {
+    return mixHex(horizon, ink, 0.85);
   }
 
   // Shades a flat tint into a top (ridge)/bottom (base) pair for the
@@ -301,6 +292,23 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     return {
       top: mixHex(tint, horizon, 0.22),
       bottom: mixHex(tint, ink, 0.32),
+    };
+  }
+
+  // The ridge's own shading pulls its TOP much further toward the horizon
+  // color than the mountains' shared shadeTint does (0.5 vs. 0.22) — a
+  // prior flat version (effective ~0.94 ink-blend, no gradient at all)
+  // read as "too dark/heavy"; this keeps the ridge's darkest point (its
+  // bottom, still close to the near mountain's own ~0.9 effective blend)
+  // in parity with "frontmost/darkest-leaning," while its lit top edge —
+  // the portion most visible against the mountain above it — comes out
+  // meaningfully lighter, addressing the actual complaint. Still the same
+  // linearGradient top/bottom mechanism as shadeTint, just tuned toward
+  // more contrast for a layer that's supposed to read lighter overall.
+  function rockShade(tint: string, horizon: string) {
+    return {
+      top: mixHex(tint, horizon, 0.5),
+      bottom: mixHex(tint, ink, 0.28),
     };
   }
 
@@ -323,16 +331,19 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     far: shadeTint(duskTints.far, duskHorizon),
     mid: shadeTint(duskTints.mid, duskHorizon),
     near: shadeTint(duskTints.near, duskHorizon),
+    rock: rockShade(rockTint(duskHorizon), duskHorizon),
   };
   const nightShades = {
     far: shadeTint(nightTints.far, nightHorizon),
     mid: shadeTint(nightTints.mid, nightHorizon),
     near: shadeTint(nightTints.near, nightHorizon),
+    rock: rockShade(rockTint(nightHorizon), nightHorizon),
   };
   const dawnShades = {
     far: shadeTint(dawnTints.far, dawnHorizon),
     mid: shadeTint(dawnTints.mid, dawnHorizon),
     near: shadeTint(dawnTints.near, dawnHorizon),
+    rock: rockShade(rockTint(dawnHorizon), dawnHorizon),
   };
 
   // Extra hue breakpoint inserted early in the sky gradient (12%, well
@@ -399,7 +410,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: duskShades.mid.bottom,
       nearMountainTop: duskShades.near.top,
       nearMountainBottom: duskShades.near.bottom,
-      rockTint: rockTint(duskShades.near.bottom),
+      rockTop: duskShades.rock.top,
+      rockBottom: duskShades.rock.bottom,
       cloudTop: duskCloudShade.top,
       cloudBottom: duskCloudShade.bottom,
       // Most present at dusk — warm, golden-lit clouds catching the last
@@ -438,7 +450,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: nightShades.mid.bottom,
       nearMountainTop: nightShades.near.top,
       nearMountainBottom: nightShades.near.bottom,
-      rockTint: rockTint(nightShades.near.bottom),
+      rockTop: nightShades.rock.top,
+      rockBottom: nightShades.rock.bottom,
       cloudTop: nightCloudShade.top,
       cloudBottom: nightCloudShade.bottom,
       // Most subdued — dim, barely-lit silhouettes that don't compete
@@ -473,7 +486,8 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       midMountainBottom: dawnShades.mid.bottom,
       nearMountainTop: dawnShades.near.top,
       nearMountainBottom: dawnShades.near.bottom,
-      rockTint: rockTint(dawnShades.near.bottom),
+      rockTop: dawnShades.rock.top,
+      rockBottom: dawnShades.rock.bottom,
       cloudTop: dawnCloudShade.top,
       cloudBottom: dawnCloudShade.bottom,
       // Present, cooler-lit than dusk's golden version — per "more
@@ -509,6 +523,7 @@ export function Wallpaper() {
   const farGradientId = `${uid}-far-gradient`;
   const midGradientId = `${uid}-mid-gradient`;
   const nearGradientId = `${uid}-near-gradient`;
+  const rockGradientId = `${uid}-rock-gradient`;
   const cloudGradientId = `${uid}-cloud-gradient`;
 
   const { isIdle } = useWindowManager();
@@ -527,7 +542,8 @@ export function Wallpaper() {
   const midBottomStopRef = useRef<SVGStopElement>(null);
   const nearTopStopRef = useRef<SVGStopElement>(null);
   const nearBottomStopRef = useRef<SVGStopElement>(null);
-  const rockRef = useRef<SVGPathElement>(null);
+  const rockTopStopRef = useRef<SVGStopElement>(null);
+  const rockBottomStopRef = useRef<SVGStopElement>(null);
   const cloudTopStopRef = useRef<SVGStopElement>(null);
   const cloudBottomStopRef = useRef<SVGStopElement>(null);
   const cloudsGroupRef = useRef<SVGGElement>(null);
@@ -626,8 +642,19 @@ export function Wallpaper() {
           0,
         );
       }
-      if (rockRef.current) {
-        tl.to(rockRef.current, { fill: scene.rockTint, duration }, 0);
+      if (rockTopStopRef.current) {
+        tl.to(
+          rockTopStopRef.current,
+          { attr: { "stop-color": scene.rockTop }, duration },
+          0,
+        );
+      }
+      if (rockBottomStopRef.current) {
+        tl.to(
+          rockBottomStopRef.current,
+          { attr: { "stop-color": scene.rockBottom }, duration },
+          0,
+        );
       }
       if (cloudTopStopRef.current) {
         tl.to(
@@ -804,6 +831,10 @@ export function Wallpaper() {
             <stop ref={nearTopStopRef} offset="0%" />
             <stop ref={nearBottomStopRef} offset="100%" />
           </linearGradient>
+          <linearGradient id={rockGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop ref={rockTopStopRef} offset="0%" />
+            <stop ref={rockBottomStopRef} offset="100%" />
+          </linearGradient>
 
           {/* Shared by every cloud puff — objectBoundingBox maps y1=0/
               y2=1 to EACH path's own bbox independently, so one gradient
@@ -863,11 +894,16 @@ export function Wallpaper() {
           fill={`url(#${nearGradientId})`}
         />
 
-        {/* Frontmost rock/terrain strip — flat, hard-edged, no internal
-            gradient (fill tweened directly, not via a linearGradient) so
-            it stays visually distinct from the shaded mountain layer
-            above it rather than reading as a fourth ridge. */}
-        <path ref={rockRef} className="wallpaper__rocks" d={ROCK_PATH} />
+        {/* Frontmost jagged ridge — same linearGradient top/bottom
+            shading mechanism as far/mid/near above (see rockShade), not a
+            flat fill. Distinct from the near mountain above it via its
+            own jagged (straight-segment) shape and gradient values, not
+            via a highlight stroke or seam line. */}
+        <path
+          className="wallpaper__mountain wallpaper__rocks"
+          d={ROCK_PATH}
+          fill={`url(#${rockGradientId})`}
+        />
       </svg>
     </div>
   );

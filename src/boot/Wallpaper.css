@@ -96,11 +96,14 @@
    per-state "more present at dusk/dawn, more subdued at night" dial) is
    tweened directly via GSAP rather than a CSS custom property. */
 
-/* .wallpaper__rocks carries no rule here — fill is tweened directly
-   (flat, no gradient — see rockTint) with no stroke/highlight of any
-   kind (an earlier pass added a seam-highlight stroke; removed per
-   direction — the value contrast between rockTint and the near
-   mountain's own bottom shade is the only distinction now). */
+/* .wallpaper__rocks carries no rule here — like far/mid/near, it fills
+   from its own linearGradient url() (see rockGradientId/rockShade in
+   Wallpaper.tsx), NOT a flat color (an earlier pass used a flat tweened
+   fill; replaced with the same top/bottom gradient mechanism as the
+   mountains). No stroke/highlight of any kind (a still-earlier pass added
+   a seam-highlight stroke; removed per direction — the gradient's own
+   value contrast against the near mountain above is the only
+   distinction). */
 
 /* The moving celestial body — a reflecting glossy sphere, never a light
    source itself (§4 reserves that for the wordmark alone). Built as
