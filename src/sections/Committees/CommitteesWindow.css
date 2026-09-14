@@ -9,9 +9,6 @@
   display: flex;
   align-items: stretch;
   gap: var(--space-6);
-  /* Room for the beats-peek tag (below) to poke out above the cards
-     without brushing the window's own top padding. */
-  padding-top: var(--space-4);
 }
 
 /* --- Membership cards: two distinct physical objects, not two text
@@ -106,98 +103,40 @@
   margin: 0;
 }
 
-/* --- §9 discovery detail: "a member of beats djs as well!" --- */
-
-/* The small peeking tag itself: a real <button>, positioned behind the
-   seam between the two cards and mostly occluded by them (lower
-   z-index) — only a small sliver pokes out above, reading as a third
-   card corner glimpsed behind the two real ones, not an equal third
-   membership.
-
-   A real silhouette, not a plain rectangle: the top-left corner is cut
-   off at an angle (clip-path), like a torn/angled paper tag, filled
-   with the light pink magenta-300 accent already used for the ACM
-   status callout above — the same accent family as the ribbon/pennant
-   treatment elsewhere, just a different shape/material for this
-   object's own "cards" language. The inset highlight gives it real
-   paper-catching-light depth instead of reading as a flat placeholder.
-   Hover lifts it (same affordance language as the dock tabs and desktop
-   objects elsewhere) so it's discoverable as clickable without being
-   told — cursor:pointer alone wasn't a strong enough signal on its own. */
-.committees-window__beats-peek {
-  position: absolute;
-  z-index: 0;
-  top: -20px;
-  left: 50%;
-  width: 52px;
-  height: 66px;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--color-magenta-600) 35%, transparent);
-  clip-path: polygon(22% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 22%);
-  background: linear-gradient(
-    160deg,
-    var(--color-magenta-300),
-    color-mix(in srgb, var(--color-magenta-300) 75%, var(--color-magenta-400) 25%)
-  );
-  box-shadow: var(--shadow-object-resting), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  transform: translateX(-50%) rotate(4deg);
-  cursor: pointer;
-  transition:
-    transform var(--duration-quick) var(--ease-standard),
-    box-shadow var(--duration-quick) var(--ease-standard);
-}
-
-.committees-window__beats-peek:hover {
-  transform: translateX(-50%) translateY(-4px) rotate(4deg);
-  box-shadow: var(--shadow-object-lifted), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-.committees-window__beats-peek:focus-visible {
-  outline: 2px solid var(--color-ice-400);
-  outline-offset: 2px;
-}
-
-/* The reveal itself — a small paper tag/card, not the magenta pennant
-   used for About's Rush Hour detail (that ribbon language belongs to
-   the journal; this object's own material is plain paper cards). Same
-   interaction pattern (click to reveal/retract, quick opacity+translate
-   slide, no bounce), different material to match this object. Rendered
-   as a sibling of <Window> (see CommitteesWindow.tsx) so it can slide
-   out past <Window>'s own clipped rounded-rect; shares the window's own
-   centered anchor point (this window uses the default center position,
-   not an off-center cluster like About) via inline style, then this
-   stylesheet adds the extra horizontal offset. */
-.committees-window__beats-reveal {
-  position: fixed;
-  z-index: var(--z-windows);
-  width: 150px;
-  padding: var(--space-4) var(--space-5);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-magenta-300) 35%, var(--color-surface-paper)),
-    var(--color-surface-paper-alt)
-  );
-  border: 1px solid color-mix(in srgb, var(--color-magenta-600) 25%, var(--color-border-paper));
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-window);
+/* --- §9 discovery detail: "a member of beats djs as well!" ---
+   Trigger lives in the title bar now (Window's `extraControl`, a music-
+   note icon sharing the exact minimize/close chip styling — see
+   Window.tsx/Window.css, nothing bespoke added there). The reveal below
+   is entirely inside this window, never on the open desktop and never a
+   third equal card: a panel above the two cards that expands/fades in,
+   real serif type with real padding, not a tight clip around the text.
+   max-height + opacity is the whole animation — calm, no bounce, same
+   easing/duration tokens used everywhere else on this site. */
+.committees-window__discovery {
+  max-height: 0;
   opacity: 0;
-  pointer-events: none;
-  transform: translate(calc(-50% - 340px), -50%) rotate(-2deg);
+  overflow: hidden;
   transition:
+    max-height var(--duration-standard) var(--ease-standard),
     opacity var(--duration-standard) var(--ease-standard),
-    transform var(--duration-standard) var(--ease-standard);
+    margin-bottom var(--duration-standard) var(--ease-standard);
 }
 
-.committees-window__beats-reveal--revealed {
+.committees-window__discovery--revealed {
+  max-height: 120px;
   opacity: 1;
-  transform: translate(calc(-50% - 471px), -50%) rotate(-2deg);
+  margin-bottom: var(--space-6);
 }
 
-.committees-window__beats-text {
+.committees-window__discovery-text {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: var(--leading-body);
   color: var(--color-text-on-paper);
   margin: 0;
+  padding: var(--space-4) var(--space-6);
+  background: color-mix(in srgb, var(--color-magenta-300) 28%, var(--color-surface-paper));
+  border: 1px solid color-mix(in srgb, var(--color-magenta-600) 25%, var(--color-border-paper));
+  border-radius: var(--radius-sm);
 }

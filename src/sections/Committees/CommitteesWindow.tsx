@@ -17,12 +17,16 @@ import "./CommitteesWindow.css";
   tilt, reading as two distinct physical cards rather than two text
   blocks split by a divider.
 
-  §9's hidden discovery detail lives here too, same interaction pattern
-  as About's ribbon (click to reveal/retract, not hover) but a different
-  visual: a small angled paper tag (light pink/magenta accent, real
-  hover-lift affordance) peeking out from behind/between the two main
-  cards — not a third equal card — which slides a matching tag out
-  beside the window on click.
+  §9's hidden discovery detail ("Member, Beats DJS") lives entirely
+  inside this window now — a prior version put the reveal on the open
+  desktop (disconnected from the wallet it's supposed to belong to) and
+  used a small pink "peek" nub wedged between the two cards that read as
+  an unexplained UI artifact rather than a designed detail. Both are
+  gone. The trigger is now a small icon button in the title bar itself
+  (Window's `extraControl`, §7.3's shared button chip — same lighting/
+  hover language as minimize/close, not a bespoke style), and the reveal
+  is a panel that expands/fades in above the two cards, inside the
+  window, never on the desktop and never a third equal card.
 */
 export function CommitteesWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
@@ -30,89 +34,92 @@ export function CommitteesWindow({ windowId }: { windowId: string }) {
   const [beatsRevealed, setBeatsRevealed] = useState(false);
 
   return (
-    <>
-      <div
-        className={`committees-window__beats-reveal${beatsRevealed ? " committees-window__beats-reveal--revealed" : ""}`}
-        style={{ left: "50%", top: "50%" }}
-        aria-hidden={!beatsRevealed}
-      >
-        <p className="committees-window__beats-text">
-          a member of beats djs as well!
-        </p>
-      </div>
-
-      <Window
-        title="Committees"
-        material="paper"
-        focused={focusedId === windowId}
-        onFocus={() => focusWindow(windowId)}
-        onClose={() => closeWindow(windowId)}
-        onCloseStart={() => setBeatsRevealed(false)}
-        onMinimize={() => minimizeWindow(windowId)}
-        originRect={originRects.committees ?? null}
-        style={{ width: "min(94vw, 780px)" }}
-      >
-        <div className="committees-window">
-          <div className="committees-window__cards">
-            {/* Small paper tag tucked behind/between the two cards — the
-                §9 discovery trigger. Deliberately smaller than either
-                real card and mostly occluded, so it reads as a peeking
-                detail, not a third equal membership. */}
-            <button
-              type="button"
-              className="committees-window__beats-peek"
-              aria-pressed={beatsRevealed}
-              aria-label="Reveal hidden detail"
-              onClick={() => setBeatsRevealed((v) => !v)}
+    <Window
+      title="Committees"
+      material="paper"
+      focused={focusedId === windowId}
+      onFocus={() => focusWindow(windowId)}
+      onClose={() => closeWindow(windowId)}
+      onCloseStart={() => setBeatsRevealed(false)}
+      onMinimize={() => minimizeWindow(windowId)}
+      originRect={originRects.committees ?? null}
+      style={{ width: "min(94vw, 780px)" }}
+      extraControl={{
+        label: beatsRevealed ? "Hide hidden detail" : "Reveal hidden detail",
+        pressed: beatsRevealed,
+        onClick: () => setBeatsRevealed((v) => !v),
+        icon: (
+          <svg viewBox="0 0 12 12" aria-hidden="true">
+            <line x1="7.4" y1="1.6" x2="7.4" y2="7.6" />
+            <path
+              d="M7.4,1.6 C9,1.9 9.3,3.3 8,4.1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
             />
+            <circle cx="5.7" cy="8.7" r="1.7" fill="currentColor" />
+          </svg>
+        ),
+      }}
+    >
+      <div className="committees-window">
+        <div
+          className={`committees-window__discovery${beatsRevealed ? " committees-window__discovery--revealed" : ""}`}
+          aria-hidden={!beatsRevealed}
+        >
+          <p className="committees-window__discovery-text">
+            a member of beats djs as well!
+          </p>
+        </div>
 
-            <div className="committees-window__card committees-window__card--acm">
-              <div className="committees-window__card-header">
-                <p className="committees-window__card-title">ACM</p>
-                <span className="committees-window__card-tag label-mono">
-                  Infotech
-                </span>
-              </div>
-              <p className="committees-window__card-role">
-                Co-committee member, Infotech
-              </p>
-              <p className="committees-window__card-joined label-mono">
-                Joined August 2026
-              </p>
-              <p className="committees-window__card-personal">
-                {
-                  "I'm drawn to Infotech because I enjoy understanding how technology works and how different systems come together. I want to strengthen my backend skills while improving my frontend, especially through web and game development."
-                }
-              </p>
-              <div className="committees-window__card-status">
-                <p className="committees-window__card-status-text">
-                  {
-                    "Current status: currently working on the ACM website alongside the team, and building games for the DigiHunt event."
-                  }
-                </p>
-              </div>
+        <div className="committees-window__cards">
+          <div className="committees-window__card committees-window__card--acm">
+            <div className="committees-window__card-header">
+              <p className="committees-window__card-title">ACM</p>
+              <span className="committees-window__card-tag label-mono">
+                Infotech
+              </span>
             </div>
-
-            <div className="committees-window__card committees-window__card--unicode">
-              <div className="committees-window__card-header">
-                <p className="committees-window__card-title">Unicode</p>
-                <span className="committees-window__card-tag label-mono">
-                  UI/UX
-                </span>
-              </div>
-              <p className="committees-window__card-role">Mentee, UI/UX</p>
-              <p className="committees-window__card-joined label-mono">
-                Joined August 2026
-              </p>
-              <p className="committees-window__card-personal">
+            <p className="committees-window__card-role">
+              Co-committee member, Infotech
+            </p>
+            <p className="committees-window__card-joined label-mono">
+              Joined August 2026
+            </p>
+            <p className="committees-window__card-personal">
+              {
+                "I'm drawn to Infotech because I enjoy understanding how technology works and how different systems come together. I want to strengthen my backend skills while improving my frontend, especially through web and game development."
+              }
+            </p>
+            <div className="committees-window__card-status">
+              <p className="committees-window__card-status-text">
                 {
-                  "I'm drawn to UI/UX because I've always enjoyed the creative side of technology. I like experimenting with layouts, visuals, and small details while thinking about how someone will actually interact with what I design."
+                  "Current status: currently working on the ACM website alongside the team, and building games for the DigiHunt event."
                 }
               </p>
             </div>
           </div>
+
+          <div className="committees-window__card committees-window__card--unicode">
+            <div className="committees-window__card-header">
+              <p className="committees-window__card-title">Unicode</p>
+              <span className="committees-window__card-tag label-mono">
+                UI/UX
+              </span>
+            </div>
+            <p className="committees-window__card-role">Mentee, UI/UX</p>
+            <p className="committees-window__card-joined label-mono">
+              Joined August 2026
+            </p>
+            <p className="committees-window__card-personal">
+              {
+                "I'm drawn to UI/UX because I've always enjoyed the creative side of technology. I like experimenting with layouts, visuals, and small details while thinking about how someone will actually interact with what I design."
+              }
+            </p>
+          </div>
         </div>
-      </Window>
-    </>
+      </div>
+    </Window>
   );
 }

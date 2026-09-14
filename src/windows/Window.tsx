@@ -27,7 +27,10 @@ import "./Window.css";
   Close/minimize are always small glossy chips regardless of the bar's
   own material — real "hardware" controls (like a physical window's
   buttons) stay one consistent language across every window, while only
-  the bar surface behind them varies per section.
+  the bar surface behind them varies per section. A window can add one
+  more control of its own (`extraControl`, e.g. Committees' §9 discovery
+  toggle) — it renders with this exact same chip, never a bespoke style,
+  so a per-window action still reads as part of the one shared system.
 
   The body (children) is otherwise unstyled here; each section's own
   window content owns its background/padding/decoration.
@@ -64,6 +67,19 @@ interface WindowProps {
   /** The spawning object's screen rect (see WindowManager.originRects) —
    *  when present, this window emerges from/retracts to it. */
   originRect?: OriginRect | null;
+  /** An optional third title-bar control, sharing the exact same chip
+   *  treatment as minimize/close (§7.3's "shared system fingerprint" —
+   *  every window uses the same title-label/lighting/glossiness
+   *  language regardless of its own content) rather than inventing a
+   *  new button style per window. For a per-window secondary action
+   *  (e.g. Committees' §9 discovery toggle) that still belongs to the
+   *  same hardware-control language. Rendered before minimize/close. */
+  extraControl?: {
+    label: string;
+    pressed?: boolean;
+    onClick: () => void;
+    icon: ReactNode;
+  };
   children: ReactNode;
 }
 
@@ -81,6 +97,7 @@ export function Window({
   onMinimize,
   style,
   originRect,
+  extraControl,
   children,
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -165,6 +182,20 @@ export function Window({
       <div className="window__titlebar">
         <span className="window__label label-mono">{title}</span>
         <div className="window__controls">
+          {extraControl && (
+            <button
+              type="button"
+              className="window__control"
+              aria-label={extraControl.label}
+              aria-pressed={extraControl.pressed}
+              onClick={(e) => {
+                e.stopPropagation();
+                extraControl.onClick();
+              }}
+            >
+              {extraControl.icon}
+            </button>
+          )}
           <button
             type="button"
             className="window__control window__control--minimize"
