@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Window } from "../../windows/Window";
 import { useWindowManager } from "../../windows/WindowManager";
 import { CLUSTER_PRIMARY } from "../../windows/windowCluster";
@@ -20,45 +21,79 @@ import "./AboutWindow.css";
   shrunk THIS window when the photo window was the one that needed to
   come down in size; reverted back to its original size/padding/type
   scale, which already fit the real copy cleanly with no overflow.
+
+  §9's discovery mechanism lives here now (moved off the desktop icon's
+  hover state): clicking the ribbon-tab slides out a second, narrower
+  ribbon strip beside this window with "Runner-Up, Rush Hour 5.0" on it.
+  It's a sibling of <Window>, not a child — <Window>'s own rounded-rect
+  clips its content, so a strip meant to visibly extend past this
+  window's edge has to live outside that clipping box, positioned off the
+  same cluster coordinates instead.
 */
 export function AboutWindow({ windowId }: { windowId: string }) {
-  const { closeWindow, minimizeWindow, focusWindow, focusedId } =
+  const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
     useWindowManager();
+  const [rushHourRevealed, setRushHourRevealed] = useState(false);
 
   return (
-    <Window
-      title="About"
-      material="paper"
-      focused={focusedId === windowId}
-      onFocus={() => focusWindow(windowId)}
-      onClose={() => closeWindow(windowId)}
-      onMinimize={() => minimizeWindow(windowId)}
-      style={CLUSTER_PRIMARY.style}
-    >
-      <div className="about-window">
-        {/* Spine stripe — a hint of the journal cover's own plum-700,
-            decorating the rectangle's left edge rather than shaping it. */}
-        <div className="about-window__spine" aria-hidden="true" />
-        {/* Small ribbon-tab accent tucked into the top edge. */}
-        <div className="about-window__ribbon-tab" aria-hidden="true" />
-
-        <div className="about-window__content">
-          <h2 className="about-window__heading">Rianna Trivedi</h2>
-          <p className="about-window__body-text">
-            {"Hi, I'm Rianna — a second-year Computer Engineering student at D.J. Sanghvi College of Engineering."}
-          </p>
-          <p className="about-window__body-text">
-            {
-              "I'm interested in exploring the different sides of Computer Engineering, especially where technology, design, and creativity overlap. I enjoy working on projects where I can build something functional while also thinking about how it looks and feels. So far, I've worked with Java, C, HTML, CSS, JavaScript, and Figma, and I'm always interested in learning something new."
-            }
-          </p>
-          <p className="about-window__body-text">
-            {
-              "While I'm not doing anything remotely academic, I'm usually listening to music, singing, reading, or going down an internet rabbit hole."
-            }
-          </p>
-        </div>
+    <>
+      <div
+        className={`about-window__rush-hour${rushHourRevealed ? " about-window__rush-hour--revealed" : ""}`}
+        style={CLUSTER_PRIMARY.style}
+        aria-hidden={!rushHourRevealed}
+      >
+        <span className="about-window__rush-hour-label label-mono">
+          Runner-Up, Rush Hour 5.0
+        </span>
       </div>
-    </Window>
+
+      <Window
+        title="About"
+        material="paper"
+        focused={focusedId === windowId}
+        onFocus={() => focusWindow(windowId)}
+        onClose={() => closeWindow(windowId)}
+        onCloseStart={() => setRushHourRevealed(false)}
+        onMinimize={() => minimizeWindow(windowId)}
+        style={CLUSTER_PRIMARY.style}
+        originRect={originRects.about ?? null}
+      >
+        <div className="about-window">
+          {/* Spine stripe — a hint of the journal cover's own plum-700,
+              decorating the rectangle's left edge rather than shaping it. */}
+          <div className="about-window__spine" aria-hidden="true" />
+          {/* Ribbon-tab accent, now also the §9 discovery trigger: click
+              slides the "Runner-Up, Rush Hour 5.0" strip out beside the
+              window; click again (or close this window) retracts it. */}
+          <button
+            type="button"
+            className="about-window__ribbon-tab"
+            aria-pressed={rushHourRevealed}
+            aria-label="Reveal hidden detail"
+            onClick={(e) => {
+              e.stopPropagation();
+              setRushHourRevealed((v) => !v);
+            }}
+          />
+
+          <div className="about-window__content">
+            <h2 className="about-window__heading">Rianna Trivedi</h2>
+            <p className="about-window__body-text">
+              {"Hi, I'm Rianna — a second-year Computer Engineering student at D.J. Sanghvi College of Engineering."}
+            </p>
+            <p className="about-window__body-text">
+              {
+                "I'm interested in exploring the different sides of Computer Engineering, especially where technology, design, and creativity overlap. I enjoy working on projects where I can build something functional while also thinking about how it looks and feels. So far, I've worked with Java, C, HTML, CSS, JavaScript, and Figma, and I'm always interested in learning something new."
+              }
+            </p>
+            <p className="about-window__body-text">
+              {
+                "While I'm not doing anything remotely academic, I'm usually listening to music, singing, reading, or going down an internet rabbit hole."
+              }
+            </p>
+          </div>
+        </div>
+      </Window>
+    </>
   );
 }

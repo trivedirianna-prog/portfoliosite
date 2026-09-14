@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { SectionId, WindowKind, WindowState } from "./types";
+import type { OriginRect, SectionId, WindowKind, WindowState } from "./types";
 
 /*
   Owns open/minimize/close/focus state for all windows (§7.4). The key
@@ -40,6 +40,14 @@ interface WindowManagerContextValue {
   // allowed to transition between time-of-day states while idle, so it
   // never competes for attention with something the user is reading.
   isIdle: boolean;
+  // The spawning object's own screen rect, per sectionId, captured right
+  // before opening/restoring — lets a Window animate in from (and retract
+  // out to) the real object it came from instead of the screen's center.
+  // Keyed by sectionId only (not sectionId+kind): a section that spawns
+  // more than one window at once (About, §8.1) still has just one real
+  // object on the desktop for both of them to emerge from/return to.
+  originRects: Partial<Record<SectionId, OriginRect>>;
+  setOriginRect: (sectionId: SectionId, rect: OriginRect) => void;
 }
 
 const WindowManagerContext = createContext<WindowManagerContextValue | null>(
@@ -49,7 +57,14 @@ const WindowManagerContext = createContext<WindowManagerContextValue | null>(
 export function WindowManagerProvider({ children }: { children: ReactNode }) {
   const [windows, setWindows] = useState<WindowState[]>([]);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [originRects, setOriginRects] = useState<
+    Partial<Record<SectionId, OriginRect>>
+  >({});
   const nextIdRef = useRef(0);
+
+  function setOriginRect(sectionId: SectionId, rect: OriginRect) {
+    setOriginRects((prev) => ({ ...prev, [sectionId]: rect }));
+  }
 
   function openWindow(sectionId: SectionId, kind: WindowKind) {
     const existing = windows.find(
@@ -114,6 +129,8 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
         focusWindow,
         focusedId,
         isIdle,
+        originRects,
+        setOriginRect,
       }}
     >
       {children}

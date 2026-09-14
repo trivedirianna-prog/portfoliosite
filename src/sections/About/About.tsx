@@ -1,5 +1,6 @@
-import { useId } from "react";
+import { useId, useRef } from "react";
 import { useSectionWindow } from "../../windows/useSectionWindow";
+import { useWindowManager } from "../../windows/WindowManager";
 import { openClusterPair } from "../../windows/windowCluster";
 import {
   JOURNAL_COVER,
@@ -22,14 +23,25 @@ import "./About.css";
   independent WindowState (see useSectionWindow's "content"/"photo"
   kinds), so each minimizes to its OWN small tab rendered right here,
   next to this same icon — local docking, not a taskbar.
+
+  While either window is open, `.section-object--windows-open` hides this
+  object's own resting caption and dims the icon slightly — otherwise the
+  plain "About" label sits stranded behind/beside the open windows,
+  reading like stray leftover UI rather than "this is the active source."
 */
 export function About() {
   const uid = useId();
   const pagesGradId = `${uid}-pages`;
+  const iconRef = useRef<HTMLButtonElement>(null);
+  const { setOriginRect } = useWindowManager();
   const content = useSectionWindow("about", "content");
   const photo = useSectionWindow("about", "photo");
+  const windowsOpen = content.isOpen || photo.isOpen;
 
   function handleOpen() {
+    if (iconRef.current) {
+      setOriginRect("about", iconRef.current.getBoundingClientRect());
+    }
     // content (text) is PRIMARY — ends up on top; photo is EMPHASIS —
     // its heavier look comes from its own shadow/framing, not from
     // being the topmost layer. See windowCluster.ts for the ordering.
@@ -37,8 +49,11 @@ export function About() {
   }
 
   return (
-    <div className="section-object section-object--about">
+    <div
+      className={`section-object section-object--about${windowsOpen ? " section-object--windows-open" : ""}`}
+    >
       <button
+        ref={iconRef}
         type="button"
         className="section-object__hit-area"
         onClick={handleOpen}
@@ -86,36 +101,16 @@ export function About() {
         </svg>
       </button>
 
-      {/* Hidden discovery detail (§9): "Runner-Up, Rush Hour 5.0" lives here
-          as a quiet hover-only reveal — no click, no new window, just a
-          reward for noticing. Fades in/out with the object's own hover
-          state; aria-hidden since it has no keyboard-operable trigger. */}
-      <span className="section-object__discovery" aria-hidden="true">
-        <svg
-          className="section-object__discovery-medal"
-          viewBox="0 0 24 24"
-          role="presentation"
-        >
-          <path
-            className="discovery-medal__ribbon"
-            d="M8.5 11 L5.5 21.5 L12 17.5 L18.5 21.5 L15.5 11 Z"
-          />
-          <circle className="discovery-medal__disc" cx="12" cy="9" r="6.5" />
-          <path
-            className="discovery-medal__star"
-            d="M12 5.2 L13.1 7.6 L15.7 8 L13.8 9.8 L14.3 12.4 L12 11.1 L9.7 12.4 L10.2 9.8 L8.3 8 L10.9 7.6 Z"
-          />
-        </svg>
-        <span className="section-object__discovery-label label-mono">
-          Runner-Up, Rush Hour 5.0
-        </span>
-      </span>
-
       {content.isMinimized && (
         <button
           type="button"
           className="section-object__dock-tab label-mono"
-          onClick={content.restore}
+          onClick={() => {
+            if (iconRef.current) {
+              setOriginRect("about", iconRef.current.getBoundingClientRect());
+            }
+            content.restore();
+          }}
         >
           About
         </button>
@@ -124,7 +119,12 @@ export function About() {
         <button
           type="button"
           className="section-object__dock-tab section-object__dock-tab--secondary label-mono"
-          onClick={photo.restore}
+          onClick={() => {
+            if (iconRef.current) {
+              setOriginRect("about", iconRef.current.getBoundingClientRect());
+            }
+            photo.restore();
+          }}
         >
           Photo
         </button>

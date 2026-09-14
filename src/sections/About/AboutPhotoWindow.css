@@ -1,34 +1,37 @@
-/*
-  More editorial/physical than the plain rectangular content windows —
-  a thick pearl mat around the image, like a printed photo in a frame —
-  while still sitting inside the same Window shell (material="paper")
-  and using the same close/minimize controls as everything else (§8.1).
-*/
-
 .about-photo-window {
   padding: var(--space-6);
   background: var(--color-plum-900);
 }
 
 .about-photo-window__mat {
+  position: relative;
   background: var(--color-surface-paper);
   padding: var(--space-6);
-  box-shadow: var(--shadow-object-resting);
+  box-shadow:
+    0 24px 48px rgba(10, 3, 14, 0.5),
+    0 8px 16px rgba(10, 3, 14, 0.35);
 }
 
-.about-photo-window__placeholder {
+/* A second, slightly larger paper edge peeking out behind the mat —
+   just enough (a few px on two sides) to read as physical thickness,
+   like a print sitting on top of a backing card, rather than a flat
+   image container. */
+.about-photo-window__mat::before {
+  content: "";
+  position: absolute;
+  inset: 5px -5px -5px 5px;
+  z-index: -1;
+  background: var(--color-surface-paper-alt);
+  box-shadow: 0 10px 24px rgba(10, 3, 14, 0.3);
+}
+
+.about-photo-window__image {
+  display: block;
+  width: 100%;
   aspect-ratio: 4 / 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(160deg, var(--color-chrome-300), var(--color-chrome-100));
-}
-
-.about-photo-window__placeholder-tag {
-  color: var(--color-text-on-paper-dim);
-  font-size: 0.6rem;
-  text-align: center;
-  padding: 0 var(--space-4);
+  object-fit: cover;
+  object-position: 50% 22%;
+  border: 1px solid var(--color-border-paper);
 }
 
 .about-photo-window__caption {

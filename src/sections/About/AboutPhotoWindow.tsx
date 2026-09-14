@@ -1,6 +1,7 @@
 import { Window } from "../../windows/Window";
 import { useWindowManager } from "../../windows/WindowManager";
 import { CLUSTER_EMPHASIS } from "../../windows/windowCluster";
+import riannaPhoto from "./IMG_89554.jpeg";
 import "./AboutPhotoWindow.css";
 
 /*
@@ -17,13 +18,14 @@ import "./AboutPhotoWindow.css";
   window). Upright, not rotated — the cluster feeling comes from offset
   position and real overlap alone.
 
-  STILL A PLACEHOLDER: no real photo has been supplied yet. Per
-  explicit direction, this project never generates/invents an image —
-  the gray block + label stays until the actual photo file is provided,
-  at which point it drops into this same mat/frame treatment.
+  Real photo (the only real photo on the entire site — never generate or
+  substitute another image here): the actual file, cropped to a 4:5
+  portrait frame via object-fit rather than a pre-cropped asset, inside
+  the same pearl mat treatment, with a stronger dimensional shadow and a
+  faint second paper edge behind the mat suggesting physical thickness.
 */
 export function AboutPhotoWindow({ windowId }: { windowId: string }) {
-  const { closeWindow, minimizeWindow, focusWindow, focusedId } =
+  const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
     useWindowManager();
 
   return (
@@ -36,14 +38,15 @@ export function AboutPhotoWindow({ windowId }: { windowId: string }) {
       onClose={() => closeWindow(windowId)}
       onMinimize={() => minimizeWindow(windowId)}
       style={CLUSTER_EMPHASIS.style}
+      originRect={originRects.about ?? null}
     >
       <div className="about-photo-window">
         <div className="about-photo-window__mat">
-          <div className="about-photo-window__placeholder">
-            <span className="about-photo-window__placeholder-tag label-mono">
-              placeholder — real photo next phase
-            </span>
-          </div>
+          <img
+            className="about-photo-window__image"
+            src={riannaPhoto}
+            alt="Rianna Trivedi"
+          />
         </div>
         <p className="about-photo-window__caption label-mono">
           Rianna Trivedi — photo

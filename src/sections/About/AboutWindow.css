@@ -14,15 +14,80 @@
 }
 
 /* Small ribbon-tab accent tucked into the top edge, clear of the title
-   bar above and the content padding below. */
+   bar above and the content padding below. Also the §9 discovery
+   trigger now (see AboutWindow.tsx) — a real <button>, reset to keep its
+   exact prior appearance (same size/color/clip-path), just clickable. */
 .about-window__ribbon-tab {
   position: absolute;
   top: 0;
   right: var(--space-8);
   width: 16px;
   height: 30px;
+  padding: 0;
+  border: none;
   background: var(--color-magenta-600);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+  cursor: pointer;
+}
+
+.about-window__ribbon-tab:focus-visible {
+  outline: 2px solid var(--color-ice-400);
+  outline-offset: 2px;
+}
+
+/* §9 discovery detail: a second, narrower ribbon-shaped strip that
+   slides out from behind/beside the About window when its ribbon-tab is
+   clicked. Rendered as a sibling of <Window> (see AboutWindow.tsx), not
+   a child — <Window>'s own overflow:hidden would otherwise clip
+   anything meant to visibly extend past its edge. Shares the window's
+   own cluster anchor point (CLUSTER_PRIMARY.style) via inline style,
+   then this stylesheet adds the extra horizontal offset that separates
+   the strip from the window's shared center. Same base z-index as an
+   unfocused window, positioned earlier in the DOM, so the window itself
+   paints on top while the strip is tucked behind it (hidden state) and
+   during the first part of its slide out (revealed state).
+
+   Slides out to the LEFT, not the right: About's right side overlaps
+   the photo window in the cluster (§8.1), and a strip sliding out that
+   side would land on top of the photo image itself. The About window's
+   left side sits over clear desktop background, so the strip reads as
+   "attached to About" without ever competing with the photo.
+*/
+.about-window__rush-hour {
+  position: fixed;
+  z-index: var(--z-windows);
+  width: 40px;
+  padding: var(--space-5) var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-magenta-400) 92%, transparent),
+    color-mix(in srgb, var(--color-magenta-600) 92%, transparent)
+  );
+  box-shadow: var(--shadow-window);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(calc(-50% - 190px), -50%);
+  transition:
+    opacity var(--duration-standard) var(--ease-standard),
+    transform var(--duration-standard) var(--ease-standard);
+}
+
+.about-window__rush-hour--revealed {
+  opacity: 1;
+  transform: translate(calc(-50% - 256px), -50%);
+}
+
+.about-window__rush-hour-label {
+  writing-mode: vertical-rl;
+  color: var(--color-pearl);
+  font-size: 0.55rem;
+  letter-spacing: var(--tracking-mono-label);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .about-window__content {

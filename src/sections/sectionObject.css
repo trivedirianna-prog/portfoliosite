@@ -55,7 +55,8 @@
   filter: drop-shadow(0 8px 24px rgba(20, 6, 24, 0.45));
   transition:
     transform var(--duration-standard) var(--ease-standard),
-    filter var(--duration-standard) var(--ease-standard);
+    filter var(--duration-standard) var(--ease-standard),
+    opacity var(--duration-standard) var(--ease-standard);
 }
 
 /* Glossy family hover — same lift as .material-glossy:hover. */
@@ -76,6 +77,24 @@
 .section-object__caption {
   position: absolute;
   bottom: calc(-1 * var(--space-6));
+  opacity: 1;
+  transition: opacity var(--duration-standard) var(--ease-standard);
+}
+
+/* While the object's own window(s) are open, its resting caption and
+   full-strength icon would otherwise sit stranded behind/beside the open
+   content, reading as stray leftover UI rather than "this is the active
+   source" — so both dim/hide instead. Opt-in per section (applied by the
+   section's own component only when it has an open window) rather than
+   automatic, so it stays inert for any section that hasn't wired it up
+   yet. No taskbar/global dock involved — purely this object's own state. */
+.section-object--windows-open .section-object__caption {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.section-object--windows-open .section-object__art {
+  opacity: 0.82;
 }
 
 /* Local-docking minimize (§7.4): a minimized window collapses to this

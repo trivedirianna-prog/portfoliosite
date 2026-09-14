@@ -18,3 +18,16 @@ export interface WindowState {
   kind: WindowKind;
   status: WindowStatus;
 }
+
+// The spawning object's own on-screen rect at the moment it was last
+// clicked, captured so a newly-opened (or restored) Window can animate in
+// from that real position/scale instead of simply appearing centered —
+// and so it has somewhere to retract back to on close. Plain
+// x/y/width/height (not a live DOMRect) since it only needs to be read
+// once per open/close, well after the click that produced it.
+export interface OriginRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
