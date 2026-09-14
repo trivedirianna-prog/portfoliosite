@@ -1,15 +1,18 @@
 /*
   Wallpaper system per §5 — a single coded environment (no images): a
-  gradient sky, layered SVG mountain/pine silhouettes with atmospheric
-  perspective, a glossy moon, and sparse glowing stars. Every element here
-  stays in the DOM permanently; only its color/opacity/position tweens
-  between time-of-day states (see Wallpaper.tsx), which is what keeps
-  dusk/night/dawn reading as one continuous world rather than three
-  swapped-in scenes.
+  gradient sky, a horizon light bloom, layered SVG mountain/pine
+  silhouettes with atmospheric perspective, cloud clusters, a glossy
+  moon, and sparse glowing stars. Every element here stays in the DOM
+  permanently; only its color/opacity/position tweens between time-of-day
+  states (see Wallpaper.tsx), which is what keeps dusk/night/dawn reading
+  as one continuous world rather than three swapped-in scenes.
 
   Layering (back to front, matching DOM order): sky -> stars -> moon ->
-  mountains. Mountains paint last so they correctly occlude the lower
-  portion of the moon where it sits near/behind the ridge line.
+  horizon glow -> far mountain -> mid mountain (the two-peak silhouette)
+  -> clouds -> near pine treeline. Later layers occlude earlier ones,
+  which is how the moon ends up behind the ridge line, the mountains
+  occlude the horizon glow everywhere but the valley notch, and the
+  treeline sits in front of everything as the nearest, darkest layer.
 */
 
 .wallpaper {
@@ -48,8 +51,27 @@
   opacity: 0.15;
 }
 
+/* The richest, most saturated point in the whole scene — screen-blended
+   so it adds light onto the sky/mountains rather than a flat tint, and
+   painted before the mountain paths below so they occlude it everywhere
+   except the valley notch, where it shows through as the "light source
+   at the end of the valley" per §5's horizon-glow requirement. */
+.wallpaper__horizon-glow {
+  mix-blend-mode: screen;
+}
+
 .wallpaper__mountain {
   fill: var(--color-ink);
+}
+
+.wallpaper__clouds {
+  fill: var(--color-pearl);
+  opacity: 0.85;
+  filter: blur(2px);
+  /* Screen-blended, like the horizon glow and moon halo — normal alpha
+     compositing against the near-black mountain fill just muted the
+     color down to a gray smudge instead of a glowing cloud. */
+  mix-blend-mode: screen;
 }
 
 /* The moving celestial body — a reflecting glossy sphere, never a light

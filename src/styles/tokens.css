@@ -56,6 +56,9 @@
   --color-magenta-vivid-400: #ff6fa8;
   --color-moonlight: #e9dbff;
   --color-moonlight-warm: #ffd9ef;
+  /* Warm golden-orange, blended into dusk's horizon glow only (§5's
+     "warmest/most golden" state) — never used on its own. */
+  --color-horizon-gold: #ffb347;
 
   /* --- Semantic color roles --- */
   --color-bg-canvas: var(--color-indigo-950);

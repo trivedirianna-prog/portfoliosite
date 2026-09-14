@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import { gsap } from "../lib/gsap";
 import { getCssVar } from "../lib/theme";
 import { useWindowManager } from "../windows/WindowManager";
@@ -7,22 +7,30 @@ import "./Wallpaper.css";
 /*
   Wallpaper system per design spec §5: ONE continuous environment across
   three time-of-day states (dusk/night/dawn), not three unrelated scenes.
-  The environment is a coded, parametric scene — gradient sky, layered
-  SVG mountain/pine silhouettes with atmospheric perspective, a shaded
-  glossy moon, sparse glowing stars — never a generated image, so the
-  three states are the same shape set with different color/opacity/
-  position values, not three separately-authored pictures.
+  The environment is a coded, parametric scene — gradient sky, a horizon
+  light bloom, layered SVG mountain/pine silhouettes with atmospheric
+  perspective, a shaded glossy moon, sparse glowing stars — never a
+  generated image, so the three states are the same shape set with
+  different color/opacity/position values, not three separately-authored
+  pictures.
 
-  The mountain/star layers use an SVG stretched via preserveAspectRatio
-  "none" (organic silhouettes tolerate non-uniform stretch fine), but the
-  moon is built as plain HTML/CSS instead: SVG elements inside a non-
-  uniformly-stretched viewBox render as ellipses, not circles, and GSAP's
-  transform math for SVG assumes uniform scaling — both break down here.
-  A CSS div with aspect-ratio:1 stays a true circle regardless of page
-  aspect ratio, and reuses the same flat-base + radial-shading + tight-
-  highlight language as .material-glossy (src/styles/materials.css) —
-  fitting, since the moon is a reflecting glossy sphere, not a light
-  source (§4 reserves emitted light for the wordmark alone).
+  Sky and mountains share one color source: every mountain layer's tint
+  is derived from the SAME horizon-glow color that also drives the glow
+  bloom itself (see mountainTints below), rather than each being picked
+  independently — that's what keeps them reading as one lit world instead
+  of two disconnected palettes stitched together at the seam.
+
+  The mountain/star/glow layers use an SVG stretched via preserveAspectRatio
+  "none" (organic silhouettes and soft blurred blobs tolerate non-uniform
+  stretch fine), but the moon is built as plain HTML/CSS instead: SVG
+  elements inside a non-uniformly-stretched viewBox render circles as
+  ellipses, and GSAP's transform math for SVG assumes uniform scaling —
+  both break down for a moving circular element. A CSS div with
+  aspect-ratio:1 stays a true circle regardless of page aspect ratio,
+  and reuses the same flat-base + radial-shading + tight-highlight
+  language as .material-glossy (src/styles/materials.css) — fitting,
+  since the moon is a reflecting glossy sphere, not a light source (§4
+  reserves emitted light for the wordmark alone).
 
   The wallpaper only transitions while idle (no window open, see
   WindowManager's isIdle) — it never competes for attention with content
@@ -40,10 +48,15 @@ const HOLD_MS = 20000;
 interface SceneConfig {
   skyTop: string;
   skyMid: string;
-  skyBottom: string;
+  /** Also the horizon-glow bloom's own color — the richest, most
+   *  saturated point in the scene, and the single source every mountain
+   *  layer's tint is blended from (see mountainTints). */
+  horizonColor: string;
+  horizonGlowOpacity: number;
   farMountainTint: string;
   midMountainTint: string;
   nearMountainTint: string;
+  cloudColor: string;
   moonTop: number;
   moonLeft: number;
   moonLightColor: string;
@@ -53,8 +66,19 @@ interface SceneConfig {
   starOpacity: number;
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace("#", "");
+// Parses either a "#rrggbb"/"#rgb" token or an "rgb(r, g, b)" string —
+// mixHex's own output is the latter, and mixHex calls are chained below
+// (e.g. mountainTints feeds an already-mixed horizon color back in), so
+// the parser has to accept its own output or every chained call silently
+// collapses to black (parseInt("rgb(...)", 16) stops at the first
+// non-hex-digit character and returns NaN, which coerces to 0 on every
+// channel — this was live for a whole pass before being caught here).
+function parseColor(input: string): [number, number, number] {
+  const rgbMatch = input.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+  if (rgbMatch) {
+    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])];
+  }
+  const clean = input.replace("#", "");
   const full =
     clean.length === 3
       ? clean
@@ -66,39 +90,55 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
-// Blends two hex tokens into a concrete rgb() string GSAP can interpolate
+// Blends two colors into a concrete rgb() string GSAP can interpolate
 // between (GSAP can't animate to/from a color-mix() string). Used to
-// derive the mountain layers' atmospheric-perspective tint from each
-// scene's own sky color, so distant layers automatically pick up the
-// haze color of that state instead of needing hand-tuned values per layer.
+// derive the mountain layers' atmospheric-perspective tint from the
+// scene's own horizon-glow color, so distant layers automatically pick
+// up the right light without needing separate hand-picked colors.
 function mixHex(a: string, b: string, t: number): string {
-  const [r1, g1, b1] = hexToRgb(a);
-  const [r2, g2, b2] = hexToRgb(b);
+  const [r1, g1, b1] = parseColor(a);
+  const [r2, g2, b2] = parseColor(b);
   const r = Math.round(r1 + (r2 - r1) * t);
   const g = Math.round(g1 + (g2 - g1) * t);
   const bl = Math.round(b1 + (b2 - b1) * t);
   return `rgb(${r}, ${g}, ${bl})`;
 }
 
-// Procedural pine-ridge silhouette: two overlaid sine waves give a jagged,
-// organic treeline without hand-authoring dozens of path points.
-function buildTreelinePath(baseY: number, amplitude: number, count: number) {
-  const points: string[] = [];
-  for (let i = 0; i <= count; i++) {
-    const x = (i / count) * 100;
-    const jitter =
-      Math.sin(i * 1.7) * amplitude * 0.6 + Math.sin(i * 0.6 + 1) * amplitude * 0.4;
-    const y = baseY - Math.abs(jitter) - (i % 2 === 0 ? amplitude * 0.3 : 0);
-    points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+// Dense, individually-shaped pine silhouettes rather than a smooth ridge:
+// overlapping triangles with sine-jittered width/height/peak-offset so
+// neither their spacing nor their height reads as a uniform repeat.
+function buildPineTreelinePath(baseY: number, count: number, minH: number, maxH: number) {
+  const treeWidth = 100 / count;
+  let d = `M0,100 L0,${baseY.toFixed(2)}`;
+  for (let i = 0; i < count; i++) {
+    const xLeft = i * treeWidth;
+    const xRight = xLeft + treeWidth * 1.18;
+    const peakJitter = Math.sin(i * 2.3) * 0.15;
+    const xPeak = xLeft + treeWidth * (0.5 + peakJitter);
+    const heightJitter =
+      (Math.sin(i * 1.3) * 0.5 + Math.sin(i * 0.53 + 2) * 0.5 + 1) / 2;
+    const h = minH + (maxH - minH) * heightJitter;
+    d += ` L${xLeft.toFixed(2)},${baseY.toFixed(2)} L${xPeak.toFixed(2)},${(baseY - h).toFixed(2)} L${xRight.toFixed(2)},${baseY.toFixed(2)}`;
   }
-  return `M0,100 L${points.join(" L")} L100,100 Z`;
+  d += ` L100,${baseY.toFixed(2)} L100,100 Z`;
+  return d;
 }
 
-const FAR_MOUNTAIN_PATH =
-  "M0,100 L0,66 C15,58 25,64 35,56 C45,48 55,62 65,54 C75,48 85,60 100,52 L100,100 Z";
+// Two prominent peaks framing a central V-shaped valley notch — angular
+// polyline (not smooth curves), so it reads as a mountain range rather
+// than a soft dune. Kept within the canvas's lower ~70% (apex at y=34)
+// so it never eats into the space reserved for the wordmark/objects above.
 const MID_MOUNTAIN_PATH =
-  "M0,100 L0,78 C12,66 20,76 30,68 C40,60 50,74 62,64 C74,56 84,72 100,62 L100,100 Z";
-const NEAR_TREELINE_PATH = buildTreelinePath(92, 9, 40);
+  "M0,100 L0,64 L8,56 L16,40 L22,34 L28,46 L34,52 L40,58 L46,62 L50,66 " +
+  "L54,62 L60,58 L66,52 L72,46 L78,34 L84,40 L92,56 L100,64 L100,100 Z";
+
+// Distant, hazy, low-contrast — mostly hidden behind the mid layer's
+// peaks, but rises just enough at center to peek through the valley notch.
+const FAR_MOUNTAIN_PATH =
+  "M0,100 L0,86 C15,82 25,86 32,80 C38,72 44,60 50,52 C56,60 62,72 68,80 " +
+  "C75,86 85,82 100,86 L100,100 Z";
+
+const NEAR_TREELINE_PATH = buildPineTreelinePath(94, 46, 10, 20);
 
 function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const indigo950 = getCssVar("--color-indigo-950");
@@ -109,42 +149,55 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const magentaVivid700 = getCssVar("--color-magenta-vivid-700");
   const magentaVivid600 = getCssVar("--color-magenta-vivid-600");
   const magentaVivid400 = getCssVar("--color-magenta-vivid-400");
+  const horizonGold = getCssVar("--color-horizon-gold");
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
+  const pearl = getCssVar("--color-pearl");
   const ink = getCssVar("--color-ink");
 
-  // Atmospheric perspective: each layer's tint is a blend of THIS state's
-  // own horizon color and ink — more haze (less ink) the farther back the
-  // layer sits — so the mountains automatically stay tonally consistent
-  // with whichever sky they're in front of, rather than needing separate
-  // hand-picked colors per layer per state. Wider spread (0.35/0.72/0.96)
-  // than a soft blend, so each layer reads as a distinct flat, hard-edged
-  // shape rather than fading into its neighbor.
-  function mountainTints(skyBottom: string) {
+  // Every mountain layer's tint is a blend of THIS state's own horizon
+  // color and ink — more haze (less ink) the farther back the layer
+  // sits — so sky and mountains share one color source instead of two
+  // independently-chosen palettes meeting at a visible seam. Wide spread
+  // (0.35/0.72/0.96) so each layer still reads as a distinct flat,
+  // hard-edged shape rather than blending into its neighbor.
+  function mountainTints(horizon: string) {
     return {
-      far: mixHex(skyBottom, ink, 0.35),
-      mid: mixHex(skyBottom, ink, 0.72),
-      near: mixHex(skyBottom, ink, 0.96),
+      far: mixHex(horizon, ink, 0.35),
+      mid: mixHex(horizon, ink, 0.72),
+      near: mixHex(horizon, ink, 0.96),
     };
   }
 
-  const duskTints = mountainTints(magentaVivid600);
-  const nightTints = mountainTints(violet800);
-  const dawnTints = mountainTints(magentaVivid400);
+  // Dusk: warmest/most golden.
+  const duskHorizon = mixHex(magentaVivid600, horizonGold, 0.4);
+  // Night: most subdued — pulled toward violet rather than left vivid.
+  const nightHorizon = mixHex(magentaVivid700, violet800, 0.3);
+  // Dawn: cooler than dusk, but still rich — never pale/washed out.
+  const dawnHorizon = mixHex(magentaVivid400, violet500, 0.25);
+
+  const duskTints = mountainTints(duskHorizon);
+  const nightTints = mountainTints(nightHorizon);
+  const dawnTints = mountainTints(dawnHorizon);
 
   return {
     dusk: {
       // The zenith stays near-black indigo across all three states (the
       // top of the sky barely changes through the night) — only the
-      // horizon band transforms, which is what actually reads as "time
-      // passing" in one continuous environment rather than a hue swap.
+      // horizon transforms, reinforcing "one continuous environment."
       skyTop: indigo950,
       skyMid: violet600,
-      skyBottom: magentaVivid600,
+      horizonColor: duskHorizon,
+      horizonGlowOpacity: 1,
       farMountainTint: duskTints.far,
       midMountainTint: duskTints.mid,
       nearMountainTint: duskTints.near,
-      moonTop: 62,
+      cloudColor: mixHex(duskHorizon, pearl, 0.15),
+      // High and to the right, clear of the right peak (apex ~78,34) and
+      // the now much larger centered wordmark — the previous low
+      // near-the-ridge position collided with both once the mountain
+      // silhouette gained an actual peak there instead of a smooth wave.
+      moonTop: 20,
       moonLeft: 68,
       // Dim / just becoming visible — a muted, low-contrast disc rather
       // than a faded-out (transparent) one; the sphere itself is always
@@ -158,12 +211,15 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     night: {
       skyTop: indigo950,
       skyMid: violet800,
-      skyBottom: magentaVivid700,
+      horizonColor: nightHorizon,
+      horizonGlowOpacity: 0.5,
       farMountainTint: nightTints.far,
       midMountainTint: nightTints.mid,
       nearMountainTint: nightTints.near,
-      moonTop: 26,
-      moonLeft: 40,
+      cloudColor: mixHex(nightHorizon, pearl, 0.15),
+      // Clear of both peaks (apexes ~22,34 and ~78,34) and the wordmark.
+      moonTop: 16,
+      moonLeft: 38,
       moonLightColor: moonlight,
       moonShadowColor: violetShadow,
       haloColor: moonlight,
@@ -177,15 +233,17 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       // moody, nighttime-leaning world even in its lightest state.
       skyTop: indigo950,
       skyMid: violet500,
-      skyBottom: magentaVivid400,
+      horizonColor: dawnHorizon,
+      horizonGlowOpacity: 0.85,
       farMountainTint: dawnTints.far,
       midMountainTint: dawnTints.mid,
       nearMountainTint: dawnTints.near,
-      // Left of center (mirroring dusk's rise-on-the-right at moonLeft 68)
-      // so it clears the large centered wordmark horizontally — at 50/56
-      // it sat almost exactly on top of "TRIVEDI".
-      moonTop: 48,
-      moonLeft: 20,
+      cloudColor: mixHex(dawnHorizon, pearl, 0.15),
+      // Left of center (mirroring dusk's rise-on-the-right), high enough
+      // to clear the left peak's apex (~22,34) instead of sitting right
+      // on top of it.
+      moonTop: 18,
+      moonLeft: 28,
       // Fading — cooler-meets-warmer transitional tone, still a solid,
       // medium-bright disc rather than one dissolving into transparency.
       moonLightColor: mixHex(moonlight, moonlightWarm, 0.5),
@@ -202,12 +260,22 @@ function parseSeconds(cssDuration: string) {
 }
 
 export function Wallpaper() {
+  const uid = useId();
+  const horizonGlowInnerId = `${uid}-horizon-inner`;
+  const horizonGlowOuterId = `${uid}-horizon-outer`;
+  const starGlowId = `${uid}-star-glow`;
+
   const { isIdle } = useWindowManager();
   const skyRef = useRef<HTMLDivElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
+  const horizonGlowGroupRef = useRef<SVGGElement>(null);
+  const horizonInnerStopRef = useRef<SVGStopElement>(null);
+  const horizonOuterStopRef = useRef<SVGStopElement>(null);
   const farRef = useRef<SVGPathElement>(null);
   const midRef = useRef<SVGPathElement>(null);
   const nearRef = useRef<SVGPathElement>(null);
+  const cloudsLeftRef = useRef<SVGGElement>(null);
+  const cloudsRightRef = useRef<SVGGElement>(null);
   const starsRef = useRef<SVGGElement>(null);
   const cycleIndexRef = useRef(0);
 
@@ -218,7 +286,7 @@ export function Wallpaper() {
 
   // Layout effect (not a plain effect) so the first scene is applied
   // before the browser paints — otherwise there's a one-frame flash of
-  // unstyled defaults (full-opacity stars, default moon colors) first.
+  // unstyled defaults first.
   useLayoutEffect(() => {
     const scenes = buildScenes();
     const crossfadeDuration = parseSeconds(
@@ -233,9 +301,30 @@ export function Wallpaper() {
           {
             "--sky-top": scene.skyTop,
             "--sky-mid": scene.skyMid,
-            "--sky-bottom": scene.skyBottom,
+            "--sky-bottom": scene.horizonColor,
             duration,
           },
+          0,
+        );
+      }
+      if (horizonInnerStopRef.current) {
+        tl.to(
+          horizonInnerStopRef.current,
+          { attr: { "stop-color": scene.horizonColor }, duration },
+          0,
+        );
+      }
+      if (horizonOuterStopRef.current) {
+        tl.to(
+          horizonOuterStopRef.current,
+          { attr: { "stop-color": scene.horizonColor }, duration },
+          0,
+        );
+      }
+      if (horizonGlowGroupRef.current) {
+        tl.to(
+          horizonGlowGroupRef.current,
+          { opacity: scene.horizonGlowOpacity, duration },
           0,
         );
       }
@@ -247,6 +336,12 @@ export function Wallpaper() {
       }
       if (nearRef.current) {
         tl.to(nearRef.current, { fill: scene.nearMountainTint, duration }, 0);
+      }
+      if (cloudsLeftRef.current) {
+        tl.to(cloudsLeftRef.current, { fill: scene.cloudColor, duration }, 0);
+      }
+      if (cloudsRightRef.current) {
+        tl.to(cloudsRightRef.current, { fill: scene.cloudColor, duration }, 0);
       }
       if (moonRef.current) {
         tl.to(
@@ -303,7 +398,7 @@ export function Wallpaper() {
         preserveAspectRatio="none"
       >
         <defs>
-          <radialGradient id="wallpaper-star-glow" cx="50%" cy="50%" r="50%">
+          <radialGradient id={starGlowId} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
             <stop offset="45%" stopColor="#ffffff" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
@@ -312,7 +407,7 @@ export function Wallpaper() {
         <g ref={starsRef} className="wallpaper__stars">
           {starPoints.map((p) => (
             <g key={`${p.cx}-${p.cy}`}>
-              <circle cx={p.cx} cy={p.cy} r="1.3" fill="url(#wallpaper-star-glow)" />
+              <circle cx={p.cx} cy={p.cy} r="1.3" fill={`url(#${starGlowId})`} />
               <circle cx={p.cx} cy={p.cy} r="0.28" fill="#ffffff" />
             </g>
           ))}
@@ -331,8 +426,46 @@ export function Wallpaper() {
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
       >
+        <defs>
+          {/* Layered soft gradients (tight bright inner + broader outer),
+              both fading fully transparent — the richest, most saturated
+              point in the scene, anchored right at the sky/mountain seam
+              so it bleeds upward into the sky and is only visible
+              downward through the valley notch (mountains occlude it
+              everywhere else, and derive their own tint from this same
+              color — see mountainTints). */}
+          <radialGradient id={horizonGlowInnerId} cx="50%" cy="50%" r="50%">
+            <stop ref={horizonInnerStopRef} offset="0%" stopOpacity="0.95" />
+            <stop offset="100%" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={horizonGlowOuterId} cx="50%" cy="50%" r="50%">
+            <stop ref={horizonOuterStopRef} offset="0%" stopOpacity="0.55" />
+            <stop offset="100%" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <g ref={horizonGlowGroupRef} className="wallpaper__horizon-glow">
+          <ellipse cx="50" cy="64" rx="46" ry="30" fill={`url(#${horizonGlowOuterId})`} />
+          <ellipse cx="50" cy="64" rx="24" ry="16" fill={`url(#${horizonGlowInnerId})`} />
+        </g>
+
         <path ref={farRef} className="wallpaper__mountain" d={FAR_MOUNTAIN_PATH} />
+
         <path ref={midRef} className="wallpaper__mountain" d={MID_MOUNTAIN_PATH} />
+
+        {/* Small cloud clusters nestled at the base of each main peak,
+            picking up the horizon glow's color. */}
+        <g ref={cloudsLeftRef} className="wallpaper__clouds">
+          <ellipse cx="10" cy="49" rx="8" ry="4" />
+          <ellipse cx="19" cy="45" rx="9.5" ry="5" />
+          <ellipse cx="28" cy="50" rx="7" ry="3.5" />
+        </g>
+        <g ref={cloudsRightRef} className="wallpaper__clouds">
+          <ellipse cx="90" cy="49" rx="8" ry="4" />
+          <ellipse cx="81" cy="45" rx="9.5" ry="5" />
+          <ellipse cx="72" cy="50" rx="7" ry="3.5" />
+        </g>
+
         <path ref={nearRef} className="wallpaper__mountain" d={NEAR_TREELINE_PATH} />
       </svg>
     </div>
