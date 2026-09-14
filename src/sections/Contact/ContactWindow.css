@@ -8,15 +8,64 @@
   outline-offset: -1px;
 }
 
-/* Same recipe as .material-glossy--translucent (materials.css) — window
-   content owns its own background per Window.tsx, so it's reproduced
-   directly here rather than applying that class to an element GSAP/
-   Draggable also manages. */
+/* Sitting above a translucent body (rather than an opaque one, like
+   every other glossy window's titlebar) needs a touch more coverage to
+   stay legible against whatever's directly behind it on the canvas —
+   the shared label/lighting/highlight-streak recipe from Window.css is
+   otherwise untouched, just boosted from that recipe's 88% to near-
+   solid here. */
+.window.contact-window--shape .window__titlebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.12)),
+    color-mix(in srgb, var(--color-surface-glossy-flat) 99%, transparent);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+/* The glass read comes from the blur + a soft reflective sheen (::before
+   below), not from letting the wallpaper/wordmark actually show through
+   — early passes at ~55% opacity (and a second pass at ~93%) both still
+   let sharp text edges (the wordmark, desktop object captions) ghost
+   through behind every line of content, which crossed from "glass" into
+   "see-through." backdrop-filter blur isn't something to lean on to fix
+   that — it doesn't reliably composite in every rendering environment,
+   so legibility has to hold on background opacity alone; blur is kept
+   only as an enhancement where it does render. Near-fully-opaque here,
+   with the remaining sliver of translucency (plus the sheen below)
+   carrying the "glass" read instead of see-through content. */
 .contact-window {
+  position: relative;
+  overflow: hidden;
   padding: var(--space-6);
-  background: color-mix(in srgb, var(--color-surface-glossy-flat) 55%, transparent);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: color-mix(in srgb, var(--color-surface-glossy-flat) 98%, transparent);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+}
+
+/* Reflective highlight sheen, screen-blended — carries the "this is
+   glass, not a flat panel" cue on its own, in the otherwise-unoccupied
+   top corner, rather than relying on transparency to sell the material. */
+.contact-window::before {
+  content: "";
+  position: absolute;
+  top: -12%;
+  left: -8%;
+  width: 55%;
+  height: 40%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 80%
+  );
+  transform: rotate(-12deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.contact-window > * {
+  position: relative;
 }
 
 .contact-window__intro {
