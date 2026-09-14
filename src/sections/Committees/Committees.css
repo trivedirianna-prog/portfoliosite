@@ -1,5 +1,12 @@
 @import "../sectionObject.css";
 
+/* Brief, subtle press-down feedback on click (matching About/Education's
+   §9 motion refinement), scoped to Committees only. */
+.section-object--committees .section-object__hit-area:active .section-object__art {
+  transform: scale(0.95);
+  transition-duration: 90ms;
+}
+
 .committees-object__card {
   stroke: var(--color-text-on-paper-dim);
   stroke-width: 0.6;

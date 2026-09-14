@@ -1,0 +1,181 @@
+.committees-window {
+  position: relative;
+  padding: var(--space-8);
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+}
+
+.committees-window__cards {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  /* Room for the beats-peek tag (below) to poke out above the cards
+     without brushing the window's own top padding. */
+  padding-top: var(--space-4);
+}
+
+/* --- Membership cards: two distinct physical objects, not two text
+   blocks split by a divider — each its own bordered/shadowed surface
+   with a slight opposite tilt, like two ID cards fanned in a wallet
+   (mirroring the desktop icon's own two-card fan, Committees.tsx). --- */
+
+.committees-window__card {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border-paper);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-object-resting);
+}
+
+.committees-window__card--acm {
+  background: var(--color-surface-paper);
+  transform: rotate(-1.5deg);
+}
+
+.committees-window__card--unicode {
+  background: var(--color-surface-paper-alt);
+  transform: rotate(1.5deg);
+}
+
+.committees-window__card-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+
+.committees-window__card-title {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: 1.4rem;
+  color: var(--color-text-on-paper);
+  margin: 0;
+}
+
+.committees-window__card-tag {
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-plum-600) 16%, transparent);
+  color: var(--color-text-on-paper-dim);
+  font-size: 0.62rem;
+}
+
+.committees-window__card-role {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-medium);
+  font-size: 1.05rem;
+  color: var(--color-text-on-paper);
+  margin: 0 0 var(--space-2);
+}
+
+.committees-window__card-joined {
+  display: block;
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-4);
+}
+
+.committees-window__card-personal {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-paper-dim);
+  margin: 0 0 var(--space-4);
+}
+
+.committees-window__card-personal:last-child {
+  margin-bottom: 0;
+}
+
+/* Status callout — ACM only; this asymmetry with Unicode is intentional,
+   not an oversight, so it's a distinctly separate visual block rather
+   than just another paragraph. */
+.committees-window__card-status {
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-magenta-300) 24%, var(--color-surface-paper));
+  border-left: 3px solid var(--color-magenta-600);
+  border-radius: var(--radius-sm);
+}
+
+.committees-window__card-status-text {
+  font-family: var(--font-serif);
+  font-size: 0.88rem;
+  line-height: var(--leading-body);
+  color: var(--color-text-on-paper);
+  margin: 0;
+}
+
+/* --- §9 discovery detail: "Member, Beats DJS" --- */
+
+/* The small peeking tag itself: a real <button>, positioned behind the
+   seam between the two cards and mostly occluded by them (lower
+   z-index) — only a small sliver pokes out above, reading as a third
+   card corner glimpsed behind the two real ones, not an equal third
+   membership. */
+.committees-window__beats-peek {
+  position: absolute;
+  z-index: 0;
+  top: -14px;
+  left: 50%;
+  width: 46px;
+  height: 60px;
+  padding: 0;
+  border: 1px solid var(--color-border-paper);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-paper-alt);
+  box-shadow: var(--shadow-object-resting);
+  transform: translateX(-50%) rotate(4deg);
+  cursor: pointer;
+}
+
+.committees-window__beats-peek:focus-visible {
+  outline: 2px solid var(--color-ice-400);
+  outline-offset: 2px;
+}
+
+/* The reveal itself — a small paper tag/card, not the magenta pennant
+   used for About's Rush Hour detail (that ribbon language belongs to
+   the journal; this object's own material is plain paper cards). Same
+   interaction pattern (click to reveal/retract, quick opacity+translate
+   slide, no bounce), different material to match this object. Rendered
+   as a sibling of <Window> (see CommitteesWindow.tsx) so it can slide
+   out past <Window>'s own clipped rounded-rect; shares the window's own
+   centered anchor point (this window uses the default center position,
+   not an off-center cluster like About) via inline style, then this
+   stylesheet adds the extra horizontal offset. */
+.committees-window__beats-reveal {
+  position: fixed;
+  z-index: var(--z-windows);
+  width: 150px;
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(180deg, var(--color-surface-paper), var(--color-surface-paper-alt));
+  border: 1px solid var(--color-border-paper);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-window);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(calc(-50% - 340px), -50%) rotate(-2deg);
+  transition:
+    opacity var(--duration-standard) var(--ease-standard),
+    transform var(--duration-standard) var(--ease-standard);
+}
+
+.committees-window__beats-reveal--revealed {
+  opacity: 1;
+  transform: translate(calc(-50% - 471px), -50%) rotate(-2deg);
+}
+
+.committees-window__beats-kicker {
+  display: block;
+  color: var(--color-magenta-600);
+  margin: 0 0 var(--space-1);
+}
+
+.committees-window__beats-text {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-serif-semibold);
+  font-size: 1rem;
+  color: var(--color-text-on-paper);
+  margin: 0;
+}
