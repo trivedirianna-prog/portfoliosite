@@ -11,9 +11,21 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: var(--z-desktop-objects);
+  /* The wordmark is the central light-source identity anchor (§4) — it
+     needs to dominate, roughly a third of the canvas width, not read as
+     an incidental label. Scales with viewport; "RIANNA TRIVEDI" in
+     Fraunces at ~4.2vw lands close to that third-of-width target across
+     typical desktop viewport sizes. */
+  font-size: clamp(3rem, 4.2vw, 10rem);
+  white-space: nowrap;
+  text-align: center;
 }
 
 .desktop__objects {
   position: absolute;
   inset: 0;
+}
+
+.desktop__object-slot {
+  position: absolute;
 }

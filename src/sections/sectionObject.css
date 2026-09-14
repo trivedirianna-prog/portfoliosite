@@ -6,7 +6,10 @@
 */
 
 .section-object {
-  position: absolute;
+  /* Positioned by its .desktop__object-slot wrapper, not itself — this
+     stays a positioning context (for .section-object__caption) without
+     being absolute against the whole canvas. */
+  position: relative;
   z-index: var(--z-desktop-objects);
   width: 140px;
   height: 140px;
