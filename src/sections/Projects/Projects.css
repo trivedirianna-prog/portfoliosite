@@ -25,6 +25,10 @@
   stop-color: var(--color-plum-700);
 }
 
+/* Was r=5.5, dead-centered — combined with a nearby bright highlight,
+   that read as a pupil+eye pairing. Shrunk (see the smaller radius
+   passed in Projects.tsx) so it registers as a hub hole, not a third
+   "face" feature. */
 .projects-object__hub {
   fill: var(--color-ink);
 }
@@ -41,18 +45,13 @@
   opacity: 0.75;
 }
 
-/* Catch-light + secondary glow — same recipe as .material-glossy::before/
-   ::after: one tight near-white highlight, one fainter diagonal glow,
-   both screen-blended so they add light rather than flatly tint. */
-.projects-object__highlight {
-  fill: rgba(255, 255, 255, 0.92);
-  mix-blend-mode: screen;
-}
-.projects-object__glow2 {
-  fill: rgba(255, 255, 255, 0.25);
-  mix-blend-mode: screen;
-}
-.projects-object__lid-highlight {
-  fill: rgba(255, 255, 255, 0.3);
+/* Was three separate flat-filled (hard-edged) ellipses — one per surface
+   (lid/case/disc) — which at similar size/spacing combined with the hub
+   into a face-like read. Reduced to two radial-gradient highlights
+   total (dominant on the case, dimmer secondary on the disc; see the
+   radialGradient defs in Projects.tsx), styled identically here via one
+   shared class — same screen-blend recipe as .material-glossy::before/
+   ::after, just with real soft falloff instead of a flat fill. */
+.projects-object__highlight-shape {
   mix-blend-mode: screen;
 }

@@ -25,6 +25,8 @@ export function Projects() {
   const lidGradId = `${uid}-lid`;
   const discGradId = `${uid}-disc`;
   const ringPathId = `${uid}-ring`;
+  const dominantHighlightId = `${uid}-hl-dominant`;
+  const secondaryHighlightId = `${uid}-hl-secondary`;
 
   return (
     <div className="section-object section-object--projects">
@@ -50,6 +52,25 @@ export function Projects() {
           {/* Not rendered directly — only exists so textPath below can
               trace the disc's own ring. */}
           <circle id={ringPathId} cx="0" cy="0" r="16" />
+
+          {/* Two highlight recipes, matching materials.css's own
+              .material-glossy::before (dominant: near-white, tight,
+              sharp falloff) / ::after (secondary: far dimmer, smaller) —
+              reused here as real radial gradients (soft falloff) rather
+              than flat-filled ellipses, which is what read as hard-edged
+              cartoon "eyes" alongside the hub. Only ONE dominant
+              highlight exists on the whole object now (on the case
+              body, its main surface); the disc gets only the fainter
+              secondary treatment, and the lid gets none at all. */}
+          <radialGradient id={dominantHighlightId} cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
+            <stop offset="45%" stopColor="#ffffff" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={secondaryHighlightId} cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         {/* Disc, drawn FIRST/behind here so the case body (next) covers
@@ -64,8 +85,23 @@ export function Projects() {
               RIANNA TRIVEDI · PROJECTS ·
             </textPath>
           </text>
-          <circle r="5.5" className="projects-object__hub" />
-          <ellipse className="projects-object__highlight" cx="10" cy="-15" rx="5.5" ry="3.2" />
+          {/* Hub, shrunk and pushed toward the rim rather than dead
+              center — centered + a nearby bright highlight is exactly
+              what paired into "eyes" with the case's own highlight. */}
+          <circle cx="4" cy="3" r="4" className="projects-object__hub" />
+          {/* Secondary (dim, small) highlight only — the disc's own
+              catch is real (a CD rim does catch light) but subordinate
+              to the case's dominant one, and positioned at the far
+              upper rim, well clear of the hub. */}
+          <ellipse
+            className="projects-object__highlight-shape"
+            fill={`url(#${secondaryHighlightId})`}
+            cx="-11"
+            cy="-16"
+            rx="5"
+            ry="3"
+            transform="rotate(-20 -11 -16)"
+          />
         </g>
 
         {/* Case body — the front-facing plane, tilted rather than
@@ -85,10 +121,24 @@ export function Projects() {
             d="M4,0 L56,0 L50,-30 L8,-26 Z"
             fill={`url(#${lidGradId})`}
           />
-          <ellipse className="projects-object__lid-highlight" cx="30" cy="-13" rx="9" ry="4" />
+          {/* No highlight on the lid — its own darker, cooler gradient
+              (plum-800 -> plum-600, vs. the case's warmer plum-700 ->
+              magenta-600) is enough to read as a distinct plane without
+              adding a third highlight to the composition. */}
 
           <rect width="62" height="42" rx="6" fill={`url(#${caseGradId})`} />
-          <ellipse className="projects-object__glow2" cx="10" cy="7" rx="9" ry="5" />
+          {/* The one dominant highlight on the whole object — tight,
+              bright, sharp falloff, on the case body since it's the
+              main glossy surface. */}
+          <ellipse
+            className="projects-object__highlight-shape"
+            fill={`url(#${dominantHighlightId})`}
+            cx="13"
+            cy="8"
+            rx="11"
+            ry="5"
+            transform="rotate(-15 13 8)"
+          />
         </g>
       </svg>
       <span className="section-object__caption label-mono">Projects</span>
