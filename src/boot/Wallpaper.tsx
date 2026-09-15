@@ -576,6 +576,32 @@ export function Wallpaper() {
   // state immediately, not fade in from a default.
   const hasAppliedRef = useRef(false);
 
+  // Stars live in their own viewBox="0 0 100 100" SVG, stretched via
+  // preserveAspectRatio="none" like the mountain layer (see file
+  // header) so a star's POSITION spreads across the full, non-square
+  // viewport exactly as intended. But the star SPARKLE SHAPE — a path
+  // symmetric in x/y — inherits that same non-uniform x/y stretch,
+  // rendering as a flattened diamond instead of a true twinkle whenever
+  // the viewport isn't square (confirmed: the path data itself is
+  // symmetric, +/-1 on both axes — this is purely the container stretch,
+  // not asymmetric path data or an errant transform). Correcting the
+  // whole SVG's preserveAspectRatio would also break the intentional
+  // full-width position spread, so instead each star's own local scale
+  // (starPoints.map below) gets an inverse x-correction — innerHeight/
+  // innerWidth — that cancels the parent's stretch exactly at that
+  // star's own origin, leaving its translate (position) untouched.
+  const [starAspectCorrection, setStarAspectCorrection] = useState(
+    () => window.innerHeight / window.innerWidth,
+  );
+
+  useLayoutEffect(() => {
+    function updateStarAspectCorrection() {
+      setStarAspectCorrection(window.innerHeight / window.innerWidth);
+    }
+    window.addEventListener("resize", updateStarAspectCorrection);
+    return () => window.removeEventListener("resize", updateStarAspectCorrection);
+  }, []);
+
   // Layout effect (not a plain effect) so the first scene is applied
   // before the browser paints — otherwise there's a one-frame flash of
   // unstyled defaults first. Re-runs whenever the shared timeOfDay
@@ -787,12 +813,16 @@ export function Wallpaper() {
         </defs>
         <g ref={starsRef} className="wallpaper__stars">
           {starPoints.map((p) => (
-            <g
-              key={`${p.cx}-${p.cy}`}
-              transform={`translate(${p.cx}, ${p.cy}) scale(${p.scale})`}
-            >
-              <circle r="0.45" fill={`url(#${starGlowId})`} />
-              <path d={STAR_SPARKLE_PATH} fill="#ffffff" />
+            <g key={`${p.cx}-${p.cy}`} transform={`translate(${p.cx}, ${p.cy})`}>
+              {/* Circle stays outside the shape-correcting inner <g> below
+                  and sized via its own radius rather than inheriting a
+                  transform scale — otherwise the same non-uniform
+                  correction that fixes the sparkle's symmetry would just
+                  stretch this into an ellipse instead. */}
+              <circle r={0.45 * p.scale} fill={`url(#${starGlowId})`} />
+              <g transform={`scale(${p.scale * starAspectCorrection}, ${p.scale})`}>
+                <path d={STAR_SPARKLE_PATH} fill="#ffffff" />
+              </g>
             </g>
           ))}
         </g>
