@@ -24,6 +24,10 @@
   border: 1px solid var(--color-border-paper);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-object-resting);
+  cursor: pointer;
+  transition:
+    transform var(--duration-standard) var(--ease-standard),
+    box-shadow var(--duration-standard) var(--ease-standard);
 }
 
 .committees-window__card--acm {
@@ -34,6 +38,83 @@
 .committees-window__card--unicode {
   background: var(--color-surface-paper-alt);
   transform: rotate(1.5deg);
+}
+
+/* --- Click-to-focus spotlight: the clicked card leaves the flex row
+   (position: absolute, centered within .committees-window__cards,
+   already its positioning context) and settles upright and slightly
+   larger, above the scrim; the OTHER card stays exactly where it was,
+   just covered by that same scrim. Same-specificity single-class rule
+   as --acm/--unicode above, placed after them so it wins the `transform`
+   cascade for whichever card is currently focused, regardless of which
+   one that is. */
+.committees-window__card--focused {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  width: min(88%, 420px);
+  transform: translate(-50%, -50%) scale(1.06) rotate(0deg);
+  box-shadow: var(--shadow-object-lifted);
+}
+
+.committees-window__card-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-pearl);
+  background: color-mix(in srgb, var(--color-plum-800) 78%, transparent);
+  box-shadow: 0 2px 8px rgba(20, 6, 24, 0.35);
+  transition:
+    transform var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
+}
+
+.committees-window__card-close svg {
+  width: 10px;
+  height: 10px;
+  overflow: visible;
+}
+
+.committees-window__card-close svg line {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.committees-window__card-close:hover {
+  transform: translateY(-1px);
+}
+
+.committees-window__card-close:active {
+  transform: translateY(0);
+  filter: brightness(0.88);
+}
+
+/* --- Scrim: covers the cards row (the OTHER card) while one is
+   focused — a plain full-bleed button so it's both the dismiss target
+   and correctly picked up by the cursor system's clickable-state
+   detection, with no visible chrome of its own beyond the dark fade. */
+.committees-window__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(10, 3, 14, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease-standard);
+}
+
+.committees-window__scrim--visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .committees-window__card-header {

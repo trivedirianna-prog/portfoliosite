@@ -16,10 +16,13 @@ type CursorState = "normal" | "clickable" | "draggable" | "text";
   State detection is generic/delegated rather than per-component: a
   single `mouseover` listener on `document` classifies whatever the
   pointer entered via a handful of selectors already used site-wide
-  (every clickable control in this codebase really is a <button> or an
-  <a href>, every draggable surface really is `.window__titlebar`, every
-  text field really is `.contact-window__input`) — so no section or
-  window file needs to import or wire anything itself.
+  (every clickable control in this codebase really is a <button>, an
+  <a href>, or (Committees' focusable cards, §8.4 — not a real <button>
+  since each one hosts its own nested close-button affordance, and a
+  <button> can't contain another) a plain element carrying role="button";
+  every draggable surface really is `.window__titlebar`; every text
+  field really is `.contact-window__input`) — so no section or window
+  file needs to import or wire anything itself.
 
   Dragging is the one state hover-detection alone can't cover correctly:
   mid-drag the pointer can end up over arbitrary content, including past
@@ -49,7 +52,7 @@ type CursorState = "normal" | "clickable" | "draggable" | "text";
   pointer feedback at all.
 */
 
-const CLICKABLE_SELECTOR = "button:not(:disabled), a[href]";
+const CLICKABLE_SELECTOR = "button:not(:disabled), a[href], [role='button']";
 const DRAGGABLE_SELECTOR = ".window__titlebar";
 const TEXT_SELECTOR = ".contact-window__input";
 
