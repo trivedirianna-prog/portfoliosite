@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import { gsap } from "../lib/gsap";
+import { useTimeOfDay } from "../boot/timeOfDay";
 import "./Wordmark.css";
 
 /*
@@ -77,6 +78,23 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const glyphGradientId = `${uid}-glyph-gradient`;
   const shineFilterId = `${uid}-shine-blur`;
   const shineGradientId = `${uid}-shine-gradient`;
+  const contrastOutlineId = `${uid}-contrast-outline`;
+
+  // Night's sky sits near-black behind the wordmark, so the gradient's
+  // pearl/icy-blue/magenta sweep (tuned against that dark backdrop) reads
+  // with strong contrast there. Dusk and dawn's sky is bright pink-
+  // magenta at the height the wordmark sits, and a light gradient on a
+  // similarly light, similarly-hued ground washes out — a lighter mid/
+  // end stop alone can't fix that, since the problem is contrast against
+  // the surroundings, not the gradient itself. Two independent, additive
+  // fixes, both gated to dusk/dawn only so night never regresses:
+  // deeper/more saturated stops (still the same pearl-to-ice-to-magenta
+  // character, just with more tonal weight to hold up against a bright
+  // ground) and a dark, cool-toned outline behind the letterforms
+  // (contrastOutlineId below) that separates them from the sky
+  // regardless of how close the hues sit.
+  const timeOfDay = useTimeOfDay();
+  const brightSky = timeOfDay === "dusk" || timeOfDay === "dawn";
 
   const textRef = useRef<SVGTextElement>(null);
   const glowRef = useRef<SVGGElement>(null);
@@ -254,8 +272,14 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
             rendered box regardless of how the phrase reflows. */}
         <linearGradient id={glyphGradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-pearl)" />
-          <stop offset="45%" stopColor="var(--color-ice-300)" />
-          <stop offset="100%" stopColor="var(--color-magenta-300)" />
+          <stop
+            offset="45%"
+            stopColor={brightSky ? "var(--color-ice-500)" : "var(--color-ice-300)"}
+          />
+          <stop
+            offset="100%"
+            stopColor={brightSky ? "var(--color-magenta-600)" : "var(--color-magenta-300)"}
+          />
         </linearGradient>
         <filter id={shineFilterId} x="-50%" y="-150%" width="200%" height="400%">
           <feGaussianBlur stdDeviation="3" />
@@ -265,6 +289,29 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           <stop offset="50%" stopColor="#ffffff" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
+        {/* Dusk/dawn-only contrast outline (see the brightSky note above) —
+            a solid, dark, cool-toned halo built from the glyphs' own alpha
+            (dilated a few units, flood-filled dark, then merged back under
+            the original artwork) rather than a second stroked copy of the
+            text, so it automatically follows the live glyph shapes/kerning
+            with no separate geometry to keep in sync. Defined unconditionally
+            (cheap, unused defs cost nothing) but only ever referenced via
+            `filter` on the glyph group below when brightSky is true. */}
+        <filter
+          id={contrastOutlineId}
+          x="-20%"
+          y="-60%"
+          width="140%"
+          height="220%"
+        >
+          <feMorphology in="SourceAlpha" operator="dilate" radius="3.5" result="dilated" />
+          <feFlood floodColor="var(--color-ink)" floodOpacity="0.55" result="outline-color" />
+          <feComposite in="outline-color" in2="dilated" operator="in" result="outline" />
+          <feMerge>
+            <feMergeNode in="outline" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
 
       {/* Soft outer bloom — appears only once the stroke finishes drawing.
@@ -277,38 +324,47 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         <ellipse ref={innerGlowRef} fill={`url(#${innerGlowId})`} />
       </g>
 
-      <text
-        ref={textRef}
-        x="450"
-        y="150"
-        textAnchor="middle"
-        className="wordmark__glyphs"
-        fill={`url(#${glyphGradientId})`}
-      >
-        {WORDMARK_CHARS.map((char, i) => (
-          <tspan
-            key={i}
-            ref={(el) => {
-              tspanRefs.current[i] = el;
-            }}
-          >
-            {char}
-          </tspan>
-        ))}
-      </text>
+      {/* Grouped so the dusk/dawn contrast outline (see brightSky above)
+          wraps the live text AND its R-leg patch as one silhouette —
+          applying the filter to each separately would outline the patch's
+          own rectangular bounds too, visible as a faint seam inside the
+          leg rather than one clean outer edge. `filter` is only ever set
+          when brightSky is true; at night this is a plain, filter-less
+          group with zero rendering cost or visual change. */}
+      <g filter={brightSky ? `url(#${contrastOutlineId})` : undefined}>
+        <text
+          ref={textRef}
+          x="450"
+          y="150"
+          textAnchor="middle"
+          className="wordmark__glyphs"
+          fill={`url(#${glyphGradientId})`}
+        >
+          {WORDMARK_CHARS.map((char, i) => (
+            <tspan
+              key={i}
+              ref={(el) => {
+                tspanRefs.current[i] = el;
+              }}
+            >
+              {char}
+            </tspan>
+          ))}
+        </text>
 
-      {/* Fills the hollow hole inside the capital R's own leg stroke —
-          see R_LEG_HOLE_PATCH_D above. Positioned via a runtime transform
-          (set in the effect once the real glyph position is known), fill
-          only, no stroke. Same gradient as the live text so the patch
-          reads as part of the same glossy ink, not a flatter graft. */}
-      <path
-        ref={rLegPatchRef}
-        d={R_LEG_HOLE_PATCH_D}
-        className="wordmark__glyphs"
-        fill={`url(#${glyphGradientId})`}
-        stroke="none"
-      />
+        {/* Fills the hollow hole inside the capital R's own leg stroke —
+            see R_LEG_HOLE_PATCH_D above. Positioned via a runtime transform
+            (set in the effect once the real glyph position is known), fill
+            only, no stroke. Same gradient as the live text so the patch
+            reads as part of the same glossy ink, not a flatter graft. */}
+        <path
+          ref={rLegPatchRef}
+          d={R_LEG_HOLE_PATCH_D}
+          className="wordmark__glyphs"
+          fill={`url(#${glyphGradientId})`}
+          stroke="none"
+        />
+      </g>
 
       {/* Specular shine (§10): a bright, tight streak riding along the
           upper/cap-height band of the linework, screen-blended and

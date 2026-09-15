@@ -419,10 +419,11 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       skyAccent: duskSkyAccent,
       skyMid: violet600,
       horizonColor: duskHorizon,
-      // Reduced from 1 — now that the sky itself carries real vividness
-      // up to the ridge line (Step 2), the glow is a contained accent at
-      // the valley seam, not the thing doing all the color work.
-      horizonGlowOpacity: 0.7,
+      // Raised from 0.7 — dusk's own sky is already bright and close in
+      // hue to the glow's magenta/gold color, so the glow needs more
+      // intensity than night to still read as a distinct light source at
+      // the valley seam rather than blending into the sky around it.
+      horizonGlowOpacity: 0.85,
       farMountainTop: duskShades.far.top,
       farMountainBottom: duskShades.far.bottom,
       midMountainTop: duskShades.mid.top,
@@ -498,7 +499,10 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       skyAccent: dawnSkyAccent,
       skyMid: violet500,
       horizonColor: dawnHorizon,
-      horizonGlowOpacity: 0.55,
+      // Raised from 0.55 for the same reason as dusk above — dawn's sky
+      // is bright and close in hue to the glow, so it needs the extra
+      // intensity to stay visible as a distinct light source.
+      horizonGlowOpacity: 0.7,
       farMountainTop: dawnShades.far.top,
       farMountainBottom: dawnShades.far.bottom,
       midMountainTop: dawnShades.mid.top,
