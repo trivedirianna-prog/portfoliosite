@@ -120,6 +120,44 @@ interface WindowProps {
 const OPEN_DURATION = 0.32;
 const CLOSE_DURATION = 0.22;
 const MINIMIZE_DURATION = 0.24;
+// How much breathing room a window's edge must keep from the viewport
+// edge — matches --space-4. A window's resting spot (the default center,
+// or a section's own off-center spawn point like the Projects fan-out's
+// percentages in projectFan.ts) is tuned against typical viewport
+// proportions but isn't guaranteed to leave enough room at every real
+// screen size — e.g. the fan-out's ~28% top anchor plus a project
+// window's own ~440px content height only clears a viewport taller than
+// ~786px, clipping the title bar off-screen on a real 1366x768 laptop.
+// Rather than hand-tune each spawn point against every possible
+// viewport, every window clamps its OWN rendered position at runtime.
+const WINDOW_EDGE_MARGIN = 16;
+
+// Extra x/y translation (added on top of a window's natural CSS-resting
+// transform) needed to keep the span [start, start+extent] within
+// [margin, viewportExtent - margin]. When the window itself is wider/
+// taller than the viewport minus both margins, keeps the LEADING edge
+// (top/left — where the title bar and its controls live) on-screen
+// rather than the trailing edge, since a clipped title bar is the
+// visibly broken part.
+function clampAxisDelta(
+  start: number,
+  end: number,
+  viewportExtent: number,
+  margin = WINDOW_EDGE_MARGIN,
+) {
+  let delta = 0;
+  if (start + delta < margin) {
+    delta = margin - start;
+  }
+  const overflowEnd = end + delta - (viewportExtent - margin);
+  if (overflowEnd > 0) {
+    const pulled = -overflowEnd;
+    if (start + delta + pulled >= margin) {
+      delta += pulled;
+    }
+  }
+  return delta;
+}
 // Minimize shrinks toward roughly where the dock tab will appear — the
 // object's own top-right corner (§7.4's default tab position; the
 // secondary/tertiary corner variants a multi-window section uses are
@@ -148,6 +186,8 @@ export function Window({
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const titlebarRef = useRef<HTMLDivElement>(null);
+  const draggableRef = useRef<Draggable | null>(null);
+  const openAnimationRef = useRef<gsap.core.Tween | null>(null);
   const isMirror = useIsMirror();
 
   // Runs once per mount — every fresh open AND every restore-from-minimize
@@ -168,23 +208,33 @@ export function Window({
       return;
     }
 
+    // Measure the window's NATURAL resting position — however its CSS
+    // (the shared centered default, or a section's own off-center style
+    // like the Projects fan-out) would place it before any GSAP x/y is
+    // applied — and correct for whatever part of it the real viewport
+    // can't actually fit, rather than trusting the percentage alone.
+    const naturalRect = el.getBoundingClientRect();
+    const restX = clampAxisDelta(naturalRect.left, naturalRect.right, window.innerWidth);
+    const restY = clampAxisDelta(naturalRect.top, naturalRect.bottom, window.innerHeight);
+
     if (originRect && openFromOrigin) {
-      const rect = el.getBoundingClientRect();
-      const dx = originRect.x + originRect.width / 2 - (rect.x + rect.width / 2);
-      const dy = originRect.y + originRect.height / 2 - (rect.y + rect.height / 2);
+      const dx =
+        originRect.x + originRect.width / 2 - (naturalRect.x + naturalRect.width / 2 + restX);
+      const dy =
+        originRect.y + originRect.height / 2 - (naturalRect.y + naturalRect.height / 2 + restY);
       const startScale = Math.max(
         0.2,
-        Math.min(originRect.width / rect.width, originRect.height / rect.height),
+        Math.min(originRect.width / naturalRect.width, originRect.height / naturalRect.height),
       );
 
-      gsap.fromTo(
+      openAnimationRef.current = gsap.fromTo(
         el,
         { xPercent: -50, yPercent: -50, x: dx, y: dy, scale: startScale, opacity: 0 },
         {
           xPercent: -50,
           yPercent: -50,
-          x: 0,
-          y: 0,
+          x: restX,
+          y: restY,
           scale: 1,
           opacity: 1,
           duration: OPEN_DURATION,
@@ -197,14 +247,14 @@ export function Window({
       // grow-in-place, still establishing GSAP's continuous ownership of
       // the transform (needed for Draggable) from these same resting
       // x/y values rather than the icon's.
-      gsap.fromTo(
+      openAnimationRef.current = gsap.fromTo(
         el,
-        { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 0.94, opacity: 0 },
+        { xPercent: -50, yPercent: -50, x: restX, y: restY, scale: 0.94, opacity: 0 },
         {
           xPercent: -50,
           yPercent: -50,
-          x: 0,
-          y: 0,
+          x: restX,
+          y: restY,
           scale: 1,
           opacity: 1,
           duration: OPEN_DURATION,
@@ -216,7 +266,7 @@ export function Window({
       // element's transform — set the same resting values a plain
       // `gsap.set` (not a tween) that Draggable below still needs to
       // track x/y reliably from a known baseline.
-      gsap.set(el, { xPercent: -50, yPercent: -50, x: 0, y: 0 });
+      gsap.set(el, { xPercent: -50, yPercent: -50, x: restX, y: restY });
     }
 
     const [draggable] = titlebarRef.current
@@ -241,6 +291,7 @@ export function Window({
           },
         })
       : [];
+    draggableRef.current = draggable ?? null;
 
     return () => {
       draggable?.kill();
@@ -250,6 +301,53 @@ export function Window({
     // already-open, already-settled window.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-clamp whenever the window's on-screen box might no longer fit:
+  // either the VIEWPORT changed (browser resized, or a maximized/
+  // fullscreen window's real dimensions only settle after mount), or the
+  // window's OWN content grew after its initial mount-time measurement —
+  // e.g. a project window's screenshot `<img>` has no reserved aspect
+  // ratio, so it loads in and reflows the window taller some tens/
+  // hundreds of ms after open, after the mount-time clamp already ran
+  // against the shorter, image-less layout. A ResizeObserver only fires
+  // for genuine layout/content-box size changes, never for the open
+  // animation's own `scale` transform (transforms don't affect layout
+  // size), so it doesn't fight that animation — except when a reflow
+  // happens to land WHILE that animation is still running, in which case
+  // this waits for it to finish (via its promise) before measuring,
+  // rather than measuring a mid-tween, not-yet-settled position.
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el || isMirror) return;
+
+    function reclamp() {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const dx = clampAxisDelta(rect.left, rect.right, window.innerWidth);
+      const dy = clampAxisDelta(rect.top, rect.bottom, window.innerHeight);
+      if (dx || dy) {
+        gsap.set(el, { x: `+=${dx}`, y: `+=${dy}` });
+        draggableRef.current?.update(true);
+      }
+    }
+
+    function handlePotentialReflow() {
+      const active = openAnimationRef.current;
+      if (active?.isActive()) {
+        active.then(reclamp);
+        return;
+      }
+      reclamp();
+    }
+
+    window.addEventListener("resize", handlePotentialReflow);
+    const observer = new ResizeObserver(handlePotentialReflow);
+    observer.observe(el);
+    return () => {
+      window.removeEventListener("resize", handlePotentialReflow);
+      observer.disconnect();
+    };
+  }, [isMirror]);
 
   function handleClose(e: React.MouseEvent) {
     e.stopPropagation();
