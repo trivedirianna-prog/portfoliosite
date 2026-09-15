@@ -37,10 +37,12 @@
   stroke-opacity: 0;
 }
 
-/* The bloom layers — see Wordmark.tsx for how these are sized against
-   the text's own rendered bounding box. Screen-blended so they add
-   light onto the sky behind them instead of a flat, edge-visible tint
-   that would wash the sky's own color out. */
+/* The bloom layers — two blurred duplicates of the live glyphs
+   themselves (see Wordmark.tsx), not an independently-shaped graphic,
+   so the glow traces the letterforms' own silhouette rather than
+   reading as a wide horizontal band/spotlight sitting behind them.
+   Screen-blended so they add light onto the sky behind them instead of
+   a flat, edge-visible tint that would wash the sky's own color out. */
 .wordmark__glow {
   mix-blend-mode: screen;
 }

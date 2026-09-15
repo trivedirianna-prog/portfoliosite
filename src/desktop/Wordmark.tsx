@@ -139,9 +139,8 @@ const BRIGHT_SKY_SHADOWS: Record<"dusk" | "dawn", { blur: number; opacity: numbe
 
 export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const uid = useId();
-  const bloomFilterId = `${uid}-bloom`;
-  const innerGlowId = `${uid}-inner-glow`;
-  const outerGlowId = `${uid}-outer-glow`;
+  const glowTightBlurId = `${uid}-glow-tight`;
+  const glowSoftBlurId = `${uid}-glow-soft`;
   const glyphGradientId = `${uid}-glyph-gradient`;
   const shineFilterId = `${uid}-shine-blur`;
   const shineGradientId = `${uid}-shine-gradient`;
@@ -163,8 +162,6 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
 
   const textRef = useRef<SVGTextElement>(null);
   const glowRef = useRef<SVGGElement>(null);
-  const innerGlowRef = useRef<SVGEllipseElement>(null);
-  const outerGlowRef = useRef<SVGEllipseElement>(null);
   const shineRef = useRef<SVGEllipseElement>(null);
   const rLegPatchRef = useRef<SVGPathElement>(null);
   const tspanRefs = useRef<(SVGTSpanElement | null)[]>([]);
@@ -176,51 +173,17 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
     document.fonts.ready.then(() => {
       if (cancelled || !textRef.current) return;
 
-      // Size the glow to the wordmark's own rendered silhouette instead
-      // of a fixed shape, so it reads as light coming from the letters
-      // themselves rather than a decorative shape sitting behind them.
+      // The glow no longer needs any manual sizing here — it's built by
+      // blurring the actual text glyphs (see the glow-tight/glow-soft
+      // duplicate <text> elements in the JSX below), so it automatically
+      // traces the real letterforms' own silhouette at every size/reflow
+      // instead of an independently-sized shape that has to be measured
+      // and kept in sync. The measurements below are still needed for
+      // the shine streak and the R-leg patch, both untouched.
       const box = textRef.current.getBBox();
       const cx = box.x + box.width / 2;
-      // getBBox()'s own vertical center is NOT a good glow-center
-      // reference: the script face's descenders/flourishes extend well
-      // below the baseline and its capital loops well above cap-height,
-      // inflating box.height (past the viewBox's own 220 units) and
-      // pulling the geometric center away from where the letterforms'
-      // actual visual weight sits. Anchoring to the real baseline (the
-      // <text>'s own y attribute) minus a fraction of font-size —
-      // approximating the midpoint between baseline and cap-height for a
-      // typical Latin face — keeps the glow centered on the MAIN body of
-      // the glyphs regardless of how far outlying flourishes reach.
       const fontSize = parseFloat(getComputedStyle(textRef.current).fontSize);
       const baselineY = parseFloat(textRef.current.getAttribute("y") ?? "0");
-      const cy = baselineY - fontSize * 0.35;
-      if (innerGlowRef.current) {
-        gsap.set(innerGlowRef.current, {
-          attr: {
-            cx,
-            cy,
-            // rx stays derived from the text's own measured width (the
-            // one dimension getBBox() measures reliably) so the glow
-            // genuinely spans the full wordmark, not just its middle —
-            // ry is derived from font-size instead of box.height for the
-            // reason above, keeping the ellipse a wide, flat band
-            // hugging the actual line of text rather than a tall,
-            // near-circular blob that only covers a few middle letters.
-            rx: box.width * 0.4,
-            ry: fontSize * 0.55,
-          },
-        });
-      }
-      if (outerGlowRef.current) {
-        gsap.set(outerGlowRef.current, {
-          attr: {
-            cx,
-            cy,
-            rx: box.width * 0.58,
-            ry: fontSize * 0.85,
-          },
-        });
-      }
       // The specular shine — a bright, tight streak riding along the
       // upper portion of the linework (roughly the cap-height band),
       // reading as light catching the tops of the strokes rather than a
@@ -321,19 +284,26 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       aria-label={WORDMARK_TEXT}
     >
       <defs>
-        <filter id={bloomFilterId} x="-100%" y="-150%" width="300%" height="400%">
-          <feGaussianBlur stdDeviation="14" />
+        {/* The glow (§4: "a light source, not a lit object") is built by
+            blurring the actual glyph shapes (see the two duplicate <text>
+            layers below), not a separately-shaped graphic sitting behind
+            them — a wide flat ellipse independently sized from the text's
+            bounding box read as a horizontal band/spotlight rather than
+            light genuinely coming from the letters, since its silhouette
+            had nothing to do with where the ink actually is. Blurring the
+            glyphs themselves means the glow's brightness naturally
+            concentrates wherever the letterforms are dense (the loops,
+            the joins) and falls off radially around each stroke, exactly
+            hugging the text's real shape at every size/reflow. Two
+            layers, tight-then-soft, same "hot center fading to broad
+            ambient touch" language the old ellipse pair used — just
+            correctly shaped now. */}
+        <filter id={glowTightBlurId} x="-30%" y="-60%" width="160%" height="220%">
+          <feGaussianBlur stdDeviation="6" />
         </filter>
-        <radialGradient id={innerGlowId}>
-          <stop offset="0%" stopColor="var(--color-pearl)" stopOpacity="0.85" />
-          <stop offset="55%" stopColor="var(--color-magenta-300)" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="var(--color-magenta-300)" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={outerGlowId}>
-          <stop offset="0%" stopColor="var(--color-magenta-300)" stopOpacity="0.35" />
-          <stop offset="60%" stopColor="var(--color-magenta-400)" stopOpacity="0.14" />
-          <stop offset="100%" stopColor="var(--color-magenta-400)" stopOpacity="0" />
-        </radialGradient>
+        <filter id={glowSoftBlurId} x="-60%" y="-120%" width="220%" height="340%">
+          <feGaussianBlur stdDeviation="20" />
+        </filter>
         {/* Glossy material fill (§10) for the letterforms themselves —
             replaces a flat solid pearl fill, which read as completely
             flat/uniform with no light response at all, inconsistent
@@ -391,14 +361,40 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         )}
       </defs>
 
-      {/* Soft outer bloom — appears only once the stroke finishes drawing.
-          Two layered, heavily-blurred gradients (tight bright inner +
-          much broader soft outer), both fading to fully transparent with
-          no hard edge anywhere, screen-blended so they add light onto
-          whatever's behind them instead of a flat tinted overpaint. */}
-      <g ref={glowRef} className="wordmark__glow" filter={`url(#${bloomFilterId})`}>
-        <ellipse ref={outerGlowRef} fill={`url(#${outerGlowId})`} />
-        <ellipse ref={innerGlowRef} fill={`url(#${innerGlowId})`} />
+      {/* Soft bloom — appears only once the stroke finishes drawing. Two
+          blurred duplicates of the live glyphs themselves (tight-blur
+          layer, then a broader soft-blur layer sitting behind it),
+          filled with the SAME per-state gradient as the real letters so
+          the glow reads as that exact ink's own light rather than a
+          separate white halo — screen-blended so it adds light onto
+          whatever's behind it (including a soft, radial touch on the sky
+          immediately around the text) instead of a flat tinted overpaint,
+          with no hard edge anywhere at any layer. */}
+      <g ref={glowRef} className="wordmark__glow">
+        <text
+          x="450"
+          y="150"
+          textAnchor="middle"
+          aria-hidden="true"
+          className="wordmark__glyphs"
+          fill={`url(#${glyphGradientId})`}
+          filter={`url(#${glowSoftBlurId})`}
+          opacity="0.55"
+        >
+          {WORDMARK_TEXT}
+        </text>
+        <text
+          x="450"
+          y="150"
+          textAnchor="middle"
+          aria-hidden="true"
+          className="wordmark__glyphs"
+          fill={`url(#${glyphGradientId})`}
+          filter={`url(#${glowTightBlurId})`}
+          opacity="0.9"
+        >
+          {WORDMARK_TEXT}
+        </text>
       </g>
 
       {/* Grouped so the dusk/dawn soft shadow (see brightSky above) wraps
