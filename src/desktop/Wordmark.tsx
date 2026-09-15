@@ -103,11 +103,12 @@ interface WordmarkProps {
 // wordmark catching dusk's own horizon light," not a color of its own.
 const DUSK_HORIZON_TINT =
   "color-mix(in srgb, color-mix(in srgb, var(--color-magenta-vivid-600) 65%, var(--color-horizon-gold) 35%) 75%, var(--color-plum-500) 25%)";
-// Same idea for dawn: Wallpaper.tsx's dawnHorizon is horizon-gold muted
-// down with chrome-300's own desaturated lavender (45/55) into a
-// restrained peach, replicated here token-for-token.
+// Same idea for dawn — restored to this pre-atmosphere-pass value
+// (magenta-vivid-400/violet-500 at 75/25) after several rounds of
+// pushing dawn's horizon toward orange were all tried and reverted;
+// matches Wallpaper.tsx's own dawnHorizon exactly.
 const DAWN_HORIZON_TINT =
-  "color-mix(in srgb, var(--color-horizon-gold) 45%, var(--color-chrome-300) 55%)";
+  "color-mix(in srgb, var(--color-magenta-vivid-400) 75%, var(--color-violet-500) 25%)";
 
 const BRIGHT_SKY_GRADIENTS: Record<"dusk" | "dawn", { offset: string; color: string }[]> = {
   dusk: [

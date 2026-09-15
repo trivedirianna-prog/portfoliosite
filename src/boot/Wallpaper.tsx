@@ -267,6 +267,7 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const violetShadow = getCssVar("--color-violet-shadow");
   const magentaVivid700 = getCssVar("--color-magenta-vivid-700");
   const magentaVivid600 = getCssVar("--color-magenta-vivid-600");
+  const magentaVivid400 = getCssVar("--color-magenta-vivid-400");
   const horizonGold = getCssVar("--color-horizon-gold");
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
@@ -350,12 +351,13 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   // magentaVivid700 itself (unlike dusk's magentaVivid600) is dark/muted
   // enough that this still reads as "night," not a second dusk.
   const nightHorizon = mixHex(magentaVivid700, violet800, 0.55);
-  // Dawn: quiet, soft, hazy, slightly cool — a MUTED peach only at the
-  // very horizon (chrome-300's own greyish lavender is what desaturates
-  // the gold down from "golden hour" into "restrained warmth," per
-  // dawnSkyAccent/dawnSkyMid below for the dustier/cooler stages above
-  // it) rather than dusk's richer, more saturated read.
-  const dawnHorizon = mixHex(horizonGold, chrome300, 0.55);
+  // Dawn: cooler than dusk, but still rich — never pale/washed out.
+  // Restored to this pre-atmosphere-pass value: several rounds of
+  // pushing the horizon toward orange (muted peach, burnt-orange,
+  // golden-orange, a direct match against a reference sunset image) were
+  // all tried and reverted — this magenta-vivid-400/violet-500 blend is
+  // the settled, approved dawn horizon.
+  const dawnHorizon = mixHex(magentaVivid400, violet500, 0.25);
 
   const duskTints = mountainTints(duskHorizon);
   const nightTints = mountainTints(nightHorizon);
