@@ -129,6 +129,13 @@
   --z-windows: 100;
   --z-window-focused: 150;
   --z-docked-tabs: 200;
+  /* Committees' card spotlight (§8.4) — a document-root portal (a
+     window's own `.window` always carries a live GSAP transform, which
+     makes it the containing block for any descendant `position: fixed`,
+     so escaping to a true full-viewport overlay needs an actual React
+     portal, not just a high z-index from inside the window) — above
+     every window/dock chrome, below the cursor so it still shows on top. */
+  --z-spotlight: 250;
   --z-cursor: 999;
 
   /* --- Motion timing (calm by default, per §12) --- */

@@ -40,21 +40,48 @@
   transform: rotate(1.5deg);
 }
 
-/* --- Click-to-focus spotlight: the clicked card leaves the flex row
-   (position: absolute, centered within .committees-window__cards,
-   already its positioning context) and settles upright and slightly
-   larger, above the scrim; the OTHER card stays exactly where it was,
-   just covered by that same scrim. Same-specificity single-class rule
-   as --acm/--unicode above, placed after them so it wins the `transform`
-   cascade for whichever card is currently focused, regardless of which
-   one that is. */
-.committees-window__card--focused {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 3;
-  width: min(88%, 420px);
-  transform: translate(-50%, -50%) scale(1.06) rotate(0deg);
+/* --- Click-to-focus spotlight (see CommitteesWindow.tsx's file header
+   for the full mechanism — a document-root portal, since `.window`'s
+   own live transform would otherwise trap a `position: fixed`
+   descendant inside the window's own box instead of the true
+   viewport). Two roles share the base `.committees-window__card` look
+   (padding/border/background/tilt) here:
+
+   1. `--spotlit`: the ORIGINAL card, still sitting in the flex row,
+      hidden while its portal stand-in shows — kept in flow (never
+      resized, never removed) so the sibling card's own box is never
+      affected, which is the entire point: no scale/enlarge, and no
+      flex-collapse for the OTHER card to fall victim to.
+   2. `--spotlight-active`: the portaled stand-in itself — always
+      mounted (see CommitteesWindow.tsx), positioned via inline
+      top/left/width/height (that card's own measured resting rect,
+      set right as focus starts) rather than any fixed size here — same
+      size and spot as the original, never enlarged. Starts invisible/
+      resting-tilted/non-interactive; `--spotlight-visible` (toggled,
+      not mounted/unmounted) is the only thing that changes, which is
+      what lets opacity/transform/box-shadow actually transition
+      instead of popping — settling upright with a deeper shadow and a
+      small lift when shown. */
+.committees-window__card--spotlit {
+  visibility: hidden;
+}
+
+.committees-window__card--spotlight-active {
+  position: fixed;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0) rotate(0deg);
+  transition:
+    opacity var(--duration-standard) var(--ease-standard),
+    transform var(--duration-standard) var(--ease-standard),
+    box-shadow var(--duration-standard) var(--ease-standard);
+}
+
+.committees-window__card--spotlight-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-6px) rotate(0deg);
   box-shadow: var(--shadow-object-lifted);
 }
 
@@ -98,21 +125,41 @@
   filter: brightness(0.88);
 }
 
-/* --- Scrim: covers the cards row (the OTHER card) while one is
-   focused — a plain full-bleed button so it's both the dismiss target
-   and correctly picked up by the cursor system's clickable-state
-   detection, with no visible chrome of its own beyond the dark fade. */
-.committees-window__scrim {
-  position: absolute;
+/* --- Spotlight portal root (document.body, see CommitteesWindow.tsx) —
+   always mounted, `--visible` toggled rather than the element itself
+   being created/destroyed, for the same transition reason as the card
+   above. The spotlighted card itself (.committees-window__card--
+   spotlight-active above) sits inside this same root so it shares one
+   stacking context above every window. pointer-events stay off the
+   root itself so an invisible full-viewport fixed layer never blocks
+   the real desktop underneath when nothing is focused.
+
+   The scrim is FOUR of these buttons, not one full-bleed rect — each
+   positioned via inline style (top/left/right/bottom/width/height) from
+   CommitteesWindow.tsx's `titlebarRect`, tiling the viewport around a
+   hole over this window's own title bar so it stays draggable/
+   clickable underneath (see the .tsx file header for why that hole is
+   the only way to achieve this, short of restructuring every window's
+   stacking). Only position comes from inline style; everything visual
+   (color/opacity/transition) stays here, shared by all four. */
+.committees-spotlight {
+  position: fixed;
   inset: 0;
-  z-index: 2;
+  z-index: var(--z-spotlight);
+  pointer-events: none;
+}
+
+.committees-spotlight__scrim {
+  position: fixed;
   background: rgba(10, 3, 14, 0.55);
+  border: none;
+  cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-standard) var(--ease-standard);
 }
 
-.committees-window__scrim--visible {
+.committees-spotlight--visible .committees-spotlight__scrim {
   opacity: 1;
   pointer-events: auto;
 }

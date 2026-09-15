@@ -123,6 +123,12 @@ interface WindowProps {
     onClick: () => void;
     icon: ReactNode;
   };
+  /** Fires after a title-bar drag ends — for a caller that needs to
+   *  re-measure this window's live on-screen position afterward (e.g.
+   *  Committees' spotlight scrim, which cuts a hole for the title bar so
+   *  it stays draggable/clickable under the full-screen overlay, per its
+   *  own file header). Purely additive; most callers don't need it. */
+  onDragEnd?: () => void;
   children: ReactNode;
 }
 
@@ -192,12 +198,19 @@ export function Window({
   originRect,
   openFromOrigin = true,
   extraControl,
+  onDragEnd,
   children,
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const titlebarRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const draggableRef = useRef<Draggable | null>(null);
+  // The Draggable instance below is created once in a mount-only effect,
+  // so its onDragEnd closure would otherwise permanently capture whichever
+  // `onDragEnd` prop existed at mount — a ref keeps it reading the latest
+  // one on every drag instead (same pattern as timeOfDay.tsx's isIdleRef).
+  const onDragEndRef = useRef(onDragEnd);
+  onDragEndRef.current = onDragEnd;
   const openAnimationRef = useRef<gsap.core.Tween | null>(null);
   const isMirror = useIsMirror();
 
@@ -318,6 +331,16 @@ export function Window({
           type: "x,y",
           trigger: titlebarRef.current,
           allowContextMenu: true,
+          // GSAP's default zIndexBoost stamps a hardcoded z-index:1000
+          // onto the target on every press in the trigger area — not just
+          // an actual drag, any titlebar click (e.g. Committees' "Reveal
+          // hidden detail" button) — which permanently escapes above the
+          // whole --z-* token scale (including --z-spotlight). Windows
+          // already get their own explicit top-of-stack treatment via
+          // WindowManager's focusWindow (DOM-reordering among windows
+          // that share --z-windows, see its own file header), so this
+          // GSAP side effect is pure conflict, never a needed behavior.
+          zIndexBoost: false,
           // The cursor system (§13) can't tell "actively dragging" from
           // hover alone — mid-drag the pointer may end up over arbitrary
           // content, including past the viewport edge — so this dispatches
@@ -342,6 +365,7 @@ export function Window({
                 detail: { x: point?.clientX ?? 0, y: point?.clientY ?? 0 },
               }),
             );
+            onDragEndRef.current?.();
           },
         })
       : [];
@@ -496,6 +520,7 @@ export function Window({
   return (
     <div
       ref={rootRef}
+      data-window-id={windowId}
       className={`window window--${material}${emphasis ? " window--emphasis" : ""}${focused ? " window--focused" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       onPointerDown={onFocus}
