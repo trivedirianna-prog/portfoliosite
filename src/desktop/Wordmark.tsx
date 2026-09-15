@@ -39,6 +39,7 @@ import "./Wordmark.css";
 */
 
 const WORDMARK_TEXT = "Rianna Trivedi";
+const WORDMARK_CHARS = WORDMARK_TEXT.split("");
 
 // Mrs Saint Delafield's capital R, extracted via opentype.js, is one
 // outer contour plus two counter-holes (fill-rule evenodd): one is the
@@ -72,6 +73,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const innerGlowRef = useRef<SVGEllipseElement>(null);
   const outerGlowRef = useRef<SVGEllipseElement>(null);
   const rLegPatchRef = useRef<SVGPathElement>(null);
+  const tspanRefs = useRef<(SVGTSpanElement | null)[]>([]);
 
   useLayoutEffect(() => {
     let cancelled = false;
@@ -128,10 +130,26 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
 
       if (!animate || !glowRef.current) return;
 
-      const length = textRef.current.getComputedTextLength();
+      // Dasharray/dashoffset must be sized PER GLYPH, not once for the
+      // whole string: a single shared value (the old approach used the
+      // full phrase's getComputedTextLength()) is compared against each
+      // glyph's own outline length independently, so a glyph with a
+      // shorter outline than that shared value — the R chief among them —
+      // reaches "fully revealed" long before its neighbors even though
+      // every glyph receives the same raw offset. Measuring and animating
+      // each tspan against its own length keeps every glyph at the same
+      // proportional reveal at every instant, regardless of shape.
+      const tspans = tspanRefs.current.filter(
+        (el): el is SVGTSpanElement => el !== null,
+      );
+      tspans.forEach((tspan) => {
+        const glyphLength = tspan.getComputedTextLength();
+        gsap.set(tspan, {
+          strokeDasharray: glyphLength,
+          strokeDashoffset: glyphLength,
+        });
+      });
       gsap.set(textRef.current, {
-        strokeDasharray: length,
-        strokeDashoffset: length,
         fillOpacity: 0,
         strokeOpacity: 1,
       });
@@ -141,7 +159,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       }
 
       tl = gsap.timeline({ onComplete });
-      tl.to(textRef.current, {
+      tl.to(tspans, {
         strokeDashoffset: 0,
         duration: 2.4,
         ease: "power1.inOut",
@@ -202,7 +220,16 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         textAnchor="middle"
         className="wordmark__glyphs"
       >
-        {WORDMARK_TEXT}
+        {WORDMARK_CHARS.map((char, i) => (
+          <tspan
+            key={i}
+            ref={(el) => {
+              tspanRefs.current[i] = el;
+            }}
+          >
+            {char}
+          </tspan>
+        ))}
       </text>
 
       {/* Fills the hollow hole inside the capital R's own leg stroke —
