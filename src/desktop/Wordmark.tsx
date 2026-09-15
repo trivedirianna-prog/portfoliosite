@@ -41,6 +41,13 @@ import "./Wordmark.css";
 const WORDMARK_TEXT = "Rianna Trivedi";
 const WORDMARK_CHARS = WORDMARK_TEXT.split("");
 
+// Resting opacity for the specular shine (see the layout effect's shine
+// sizing and the CSS default below, which must match — the animated
+// boot path fades in TO this exact value via GSAP, since an inline
+// style set by GSAP would otherwise permanently override the CSS
+// default rather than falling back to it).
+const SHINE_RESTING_OPACITY = 0.55;
+
 // Mrs Saint Delafield's capital R, extracted via opentype.js, is one
 // outer contour plus two counter-holes (fill-rule evenodd): one is the
 // loop's own counter (upper right), the other sits INSIDE the leg's own
@@ -67,11 +74,15 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const bloomFilterId = `${uid}-bloom`;
   const innerGlowId = `${uid}-inner-glow`;
   const outerGlowId = `${uid}-outer-glow`;
+  const glyphGradientId = `${uid}-glyph-gradient`;
+  const shineFilterId = `${uid}-shine-blur`;
+  const shineGradientId = `${uid}-shine-gradient`;
 
   const textRef = useRef<SVGTextElement>(null);
   const glowRef = useRef<SVGGElement>(null);
   const innerGlowRef = useRef<SVGEllipseElement>(null);
   const outerGlowRef = useRef<SVGEllipseElement>(null);
+  const shineRef = useRef<SVGEllipseElement>(null);
   const rLegPatchRef = useRef<SVGPathElement>(null);
   const tspanRefs = useRef<(SVGTSpanElement | null)[]>([]);
 
@@ -87,22 +98,33 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       // themselves rather than a decorative shape sitting behind them.
       const box = textRef.current.getBBox();
       const cx = box.x + box.width / 2;
-      const cy = box.y + box.height / 2;
-      // ry multipliers were 1.05/1.9 — against a bbox already taller than
-      // the SVG's own 220-unit viewBox (the oversized cap + the script's
-      // own descenders/flourishes push box.height past 260 units), that
-      // produced an outer radius of ~496 units: a glow nearly 2.25x the
-      // viewBox's own height, confirmed in isolation (Phase B.4) as a
-      // ~670x790px blob covering almost the full frame. Brought down to
-      // be proportionate to the width multipliers instead of compounding
-      // an already-oversized measurement.
+      // getBBox()'s own vertical center is NOT a good glow-center
+      // reference: the script face's descenders/flourishes extend well
+      // below the baseline and its capital loops well above cap-height,
+      // inflating box.height (past the viewBox's own 220 units) and
+      // pulling the geometric center away from where the letterforms'
+      // actual visual weight sits. Anchoring to the real baseline (the
+      // <text>'s own y attribute) minus a fraction of font-size —
+      // approximating the midpoint between baseline and cap-height for a
+      // typical Latin face — keeps the glow centered on the MAIN body of
+      // the glyphs regardless of how far outlying flourishes reach.
+      const fontSize = parseFloat(getComputedStyle(textRef.current).fontSize);
+      const baselineY = parseFloat(textRef.current.getAttribute("y") ?? "0");
+      const cy = baselineY - fontSize * 0.35;
       if (innerGlowRef.current) {
         gsap.set(innerGlowRef.current, {
           attr: {
             cx,
             cy,
-            rx: box.width * 0.42,
-            ry: box.height * 0.5,
+            // rx stays derived from the text's own measured width (the
+            // one dimension getBBox() measures reliably) so the glow
+            // genuinely spans the full wordmark, not just its middle —
+            // ry is derived from font-size instead of box.height for the
+            // reason above, keeping the ellipse a wide, flat band
+            // hugging the actual line of text rather than a tall,
+            // near-circular blob that only covers a few middle letters.
+            rx: box.width * 0.4,
+            ry: fontSize * 0.55,
           },
         });
       }
@@ -111,8 +133,23 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           attr: {
             cx,
             cy,
-            rx: box.width * 0.62,
-            ry: box.height * 0.8,
+            rx: box.width * 0.58,
+            ry: fontSize * 0.85,
+          },
+        });
+      }
+      // The specular shine — a bright, tight streak riding along the
+      // upper portion of the linework (roughly the cap-height band),
+      // reading as light catching the tops of the strokes rather than a
+      // second competing bloom. Same wide-flat-ellipse language as the
+      // glow above, just smaller/brighter/higher up.
+      if (shineRef.current) {
+        gsap.set(shineRef.current, {
+          attr: {
+            cx,
+            cy: baselineY - fontSize * 0.58,
+            rx: box.width * 0.32,
+            ry: fontSize * 0.13,
           },
         });
       }
@@ -157,6 +194,9 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       if (rLegPatchRef.current) {
         gsap.set(rLegPatchRef.current, { fillOpacity: 0 });
       }
+      if (shineRef.current) {
+        gsap.set(shineRef.current, { opacity: 0 });
+      }
 
       tl = gsap.timeline({ onComplete });
       tl.to(tspans, {
@@ -170,6 +210,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           "-=0.15",
         )
         .to(textRef.current, { strokeOpacity: 0, duration: 0.5 }, "<")
+        .to(shineRef.current, { opacity: SHINE_RESTING_OPACITY, duration: 0.5 }, "<")
         .to(glowRef.current, { opacity: 1, duration: 0.9 }, "-=0.3");
     });
 
@@ -201,6 +242,29 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           <stop offset="60%" stopColor="var(--color-magenta-400)" stopOpacity="0.14" />
           <stop offset="100%" stopColor="var(--color-magenta-400)" stopOpacity="0" />
         </radialGradient>
+        {/* Glossy material fill (§10) for the letterforms themselves —
+            replaces a flat solid pearl fill, which read as completely
+            flat/uniform with no light response at all, inconsistent
+            with every other glossy object on the site. Vertical sweep
+            (bright pearl at top, catching light, settling to the
+            palette's own icy-blue undertone then a warmer magenta
+            toward the bottom) reads as a rounded/glossy stroke profile
+            rather than a flat cutout, using objectBoundingBox (the
+            default) so it automatically spans the live text's own
+            rendered box regardless of how the phrase reflows. */}
+        <linearGradient id={glyphGradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-pearl)" />
+          <stop offset="45%" stopColor="var(--color-ice-300)" />
+          <stop offset="100%" stopColor="var(--color-magenta-300)" />
+        </linearGradient>
+        <filter id={shineFilterId} x="-50%" y="-150%" width="200%" height="400%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+        <radialGradient id={shineGradientId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
       {/* Soft outer bloom — appears only once the stroke finishes drawing.
@@ -219,6 +283,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         y="150"
         textAnchor="middle"
         className="wordmark__glyphs"
+        fill={`url(#${glyphGradientId})`}
       >
         {WORDMARK_CHARS.map((char, i) => (
           <tspan
@@ -235,12 +300,29 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       {/* Fills the hollow hole inside the capital R's own leg stroke —
           see R_LEG_HOLE_PATCH_D above. Positioned via a runtime transform
           (set in the effect once the real glyph position is known), fill
-          only, no stroke. */}
+          only, no stroke. Same gradient as the live text so the patch
+          reads as part of the same glossy ink, not a flatter graft. */}
       <path
         ref={rLegPatchRef}
         d={R_LEG_HOLE_PATCH_D}
         className="wordmark__glyphs"
+        fill={`url(#${glyphGradientId})`}
         stroke="none"
+      />
+
+      {/* Specular shine (§10): a bright, tight streak riding along the
+          upper/cap-height band of the linework, screen-blended and
+          rendered ON TOP of the glyphs so it brightens the ink it
+          overlaps — reading as light catching the tops of the strokes,
+          the same language as every other glossy object's catch-light,
+          adapted from a simple shape to a streak that can ride along a
+          horizontal line of script. Sized/positioned in the layout
+          effect once the real text geometry is known. */}
+      <ellipse
+        ref={shineRef}
+        className="wordmark__shine"
+        fill={`url(#${shineGradientId})`}
+        filter={`url(#${shineFilterId})`}
       />
     </svg>
   );

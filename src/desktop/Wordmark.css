@@ -19,7 +19,14 @@
 .wordmark__glyphs {
   font-family: var(--font-script);
   font-size: 150px;
-  fill: var(--color-pearl);
+  /* fill is set per-instance in Wordmark.tsx (a linearGradient url(),
+     §10's glossy material recipe) rather than here — a flat class-level
+     color would win the cascade over that per-instance gradient url()
+     regardless of specificity (CSS beats SVG presentation attributes),
+     and a hardcoded gradient id can't live in a shared stylesheet since
+     Boot and Desktop can both mount this component at once (see the
+     file header's useId() note), each needing its OWN instance-scoped
+     gradient. */
   fill-opacity: 1;
   /* Stroke only exists to animate the draw-on; at rest it's invisible
      (strokeOpacity animated to 0 once fill completes) so the type
@@ -36,4 +43,16 @@
    that would wash the sky's own color out. */
 .wordmark__glow {
   mix-blend-mode: screen;
+}
+
+/* The specular shine — see Wordmark.tsx for sizing/positioning. Screen-
+   blended and sitting in front of the glyphs (DOM order) so it brightens
+   the ink it overlaps rather than a flat shape competing with it. Resting
+   opacity matches SHINE_RESTING_OPACITY in Wordmark.tsx exactly — the
+   animated boot path fades in TO that same value via GSAP rather than
+   ever relying on this rule mid-animation. */
+.wordmark__shine {
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  pointer-events: none;
 }
