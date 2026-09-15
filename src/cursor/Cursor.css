@@ -54,21 +54,28 @@ html.custom-cursor-active * {
   stop-color: var(--color-plum-600);
 }
 
+/* Fix #1 (round 1): previously an unclipped, flat-filled ellipse bled
+   past the arrow's own edges on every state — wrapped in a <clipPath>
+   keyed to the same path data as the arrow fill (Cursor.tsx's
+   ARROW_PATH/clipId) so it can never render outside the silhouette.
+
+   Fix #1 (round 2): that flat fill (a single solid rgba color with a
+   hard geometric edge) was never actually blurred — the "soft" look
+   before clipping was just small-scale anti-aliasing, not a real
+   falloff, so clipping it produced a crisp sticker-like cutoff instead
+   of a feathered one. Both `.cursor__highlight` and `.cursor__grip-glow`
+   now fill from a radial gradient (see Cursor.tsx's highlightGradId/
+   gripGlowGradId — the same recipe every other glossy object on the
+   site already uses) that fades to fully transparent WELL inside each
+   ellipse's own edge, so the clip only ever trims away area that's
+   already invisible rather than cutting a still-opaque edge. Fill
+   itself now lives on the SVG elements (a gradient reference, not a
+   flat color); only the blend mode/opacity transition stays here. */
 .cursor__highlight {
-  fill: rgba(255, 255, 255, 0.92);
   mix-blend-mode: screen;
 }
 
-/* Fix #1: previously an unclipped ellipse, its soft blur bled past the
-   arrow's own edges on every state and read as a glow floating near the
-   cursor rather than light catching a glossy surface. Now wrapped in a
-   <clipPath> keyed to the exact same path data as the arrow fill (see
-   Cursor.tsx's ARROW_PATH/clipId), so the highlight — and the grip-glow
-   below — can never render outside the pointer's silhouette, at any
-   scale, tilt, or future shape edit. */
-
 .cursor__grip-glow {
-  fill: rgba(255, 255, 255, 0.4);
   mix-blend-mode: screen;
   opacity: 0;
   transition: opacity var(--duration-quick) var(--ease-standard);

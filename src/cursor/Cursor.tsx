@@ -67,6 +67,8 @@ export function Cursor() {
   const uid = useId();
   const gradId = `${uid}-arrow`;
   const clipId = `${uid}-clip`;
+  const highlightGradId = `${uid}-hl`;
+  const gripGlowGradId = `${uid}-grip-glow`;
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<CursorState>("normal");
   const [visible, setVisible] = useState(false);
@@ -146,6 +148,23 @@ export function Cursor() {
           <clipPath id={clipId}>
             <path d={ARROW_PATH} />
           </clipPath>
+          {/* Same dominant-highlight/secondary-glow radial-gradient
+              recipe every other glossy object on the site already uses
+              (e.g. Projects.tsx's CD-R case) — the falloff to fully
+              transparent happens WITHIN the gradient itself, well
+              inside each ellipse's own edge, so the clipPath above only
+              ever trims away area that's already faded to nothing
+              rather than cutting through a hard, still-opaque edge
+              (the actual bug in the previous flat-fill version). */}
+          <radialGradient id={highlightGradId} cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
+            <stop offset="40%" stopColor="#ffffff" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={gripGlowGradId} cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         {/* Arrow + its clipped highlight/grip-glow all rotate/scale
@@ -156,18 +175,26 @@ export function Cursor() {
           <g clipPath={`url(#${clipId})`}>
             <ellipse
               className="cursor__highlight"
-              cx="4.4"
-              cy="5.6"
-              rx="2.4"
-              ry="3.6"
-              transform="rotate(-25 4.4 5.6)"
+              fill={`url(#${highlightGradId})`}
+              cx="4"
+              cy="5"
+              rx="2"
+              ry="3"
+              transform="rotate(-25 4 5)"
             />
             {/* Draggable's "grip" cue — a dim secondary glow near the
                 tail, same dominant-highlight/secondary-glow convention
                 every other glossy object on the site already uses
                 (materials.css), rather than a foreign tick-mark or
                 texture that risks reading as a separate shape. */}
-            <ellipse className="cursor__grip-glow" cx="10" cy="17.5" rx="3.2" ry="3.6" />
+            <ellipse
+              className="cursor__grip-glow"
+              fill={`url(#${gripGlowGradId})`}
+              cx="9.5"
+              cy="17"
+              rx="2.4"
+              ry="2.8"
+            />
           </g>
         </g>
 
