@@ -213,6 +213,21 @@ export function Window({
           type: "x,y",
           trigger: titlebarRef.current,
           allowContextMenu: true,
+          // The cursor system (§13) can't tell "actively dragging" from
+          // hover alone — mid-drag the pointer may end up over arbitrary
+          // content, including past the viewport edge — so this dispatches
+          // plain DOM events the Cursor component listens for directly,
+          // rather than this generic window needing to know anything
+          // about the cursor itself.
+          onDragStart: () => window.dispatchEvent(new Event("cursor:drag-start")),
+          onDragEnd: function (this: Draggable) {
+            const point = this.pointerEvent as MouseEvent | undefined;
+            window.dispatchEvent(
+              new CustomEvent("cursor:drag-end", {
+                detail: { x: point?.clientX ?? 0, y: point?.clientY ?? 0 },
+              }),
+            );
+          },
         })
       : [];
 

@@ -1,0 +1,111 @@
+/*
+  Custom cursor per §13 — glossy pink-purple arrow. Same recipe language
+  as materials.css's .material-glossy (gradient base + one dominant
+  catch-light, screen-blended), reproduced directly on this small SVG
+  glyph rather than applying that class, same reasoning as every other
+  section object's own bespoke shape (see sectionObject.css).
+*/
+
+/* Hides the native cursor everywhere, but only once the custom cursor
+   has actually mounted and is tracking (Cursor.tsx toggles this class
+   at runtime) — never an unconditional rule, so a failed mount or a
+   coarse-pointer/touch device (which never adds this class) doesn't
+   leave a visitor with no cursor at all. `!important` because a fair
+   number of existing rules across the site set their own explicit
+   `cursor: pointer/grab/default` (buttons, the titlebar, links, the
+   base reset) — all still meaningful as a fallback, so left in place
+   rather than hunted down and removed, and simply overridden here for
+   the one runtime state that actually needs it overridden. */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-cursor);
+  width: 24px;
+  height: 28px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+  will-change: transform;
+}
+
+.cursor--hidden {
+  opacity: 0;
+}
+
+.cursor__art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 3px 6px rgba(20, 6, 24, 0.5));
+}
+
+.cursor__stop-a {
+  /* Bright pink lead — "pink-purple sheen" per §13, distinct from the
+     warmer magenta the rest of the glossy family (Projects) leans on. */
+  stop-color: var(--color-magenta-300);
+}
+.cursor__stop-b {
+  stop-color: var(--color-plum-600);
+}
+
+.cursor__highlight {
+  fill: rgba(255, 255, 255, 0.92);
+  mix-blend-mode: screen;
+}
+
+.cursor__grip {
+  opacity: 0;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.cursor__caret {
+  opacity: 0;
+  stroke: var(--color-ice-300);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+/* --- Per-state detail on the arrow group — same glyph throughout,
+   understated differentiation only (§13: "should not announce itself
+   loudly"). transform-box/-origin pinned near the arrow's own tip so
+   scale/rotate reads as the glyph tilting from its point, not swelling
+   from its bounding-box center. --- */
+.cursor__arrow-group {
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
+  transition: transform var(--duration-quick) var(--ease-standard);
+}
+
+.cursor--clickable .cursor__arrow-group {
+  transform: scale(1.18) rotate(-6deg);
+}
+.cursor--clickable .cursor__art {
+  filter: drop-shadow(0 4px 10px rgba(20, 6, 24, 0.6));
+}
+
+.cursor--draggable .cursor__arrow-group {
+  /* A slight compress (squashed vertically), not a shape swap — reads
+     as "gripping/under tension" per §13's brief. */
+  transform: scale(1.06, 0.86) rotate(-3deg);
+}
+.cursor--draggable .cursor__grip {
+  opacity: 1;
+}
+
+.cursor--text .cursor__arrow-group {
+  transform: scale(0.82) rotate(22deg);
+  opacity: 0.9;
+}
+.cursor--text .cursor__caret {
+  opacity: 1;
+}
