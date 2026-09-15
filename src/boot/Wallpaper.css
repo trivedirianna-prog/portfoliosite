@@ -96,6 +96,18 @@
    per-state "more present at dusk/dawn, more subdued at night" dial) is
    tweened directly via GSAP rather than a CSS custom property. */
 
+/* A very slight opacity reduction on the mountain/rock shapes only (never
+   the horizon-glow/clouds/moon/stars above them) — nudges the landscape's
+   visual weight down just a touch so the five desktop objects stay the
+   clearer focus, without blurring, recomposing, or removing any detail.
+   Scoped to .wallpaper__mountain specifically (applied to far/mid/near
+   AND rocks, see Wallpaper.tsx) rather than the whole .wallpaper__
+   mountains-layer SVG, which also holds the horizon-glow bloom that must
+   stay at its own already-tuned intensity. */
+.wallpaper__mountain {
+  opacity: 0.93;
+}
+
 /* .wallpaper__rocks carries no rule here — like far/mid/near, it fills
    from its own linearGradient url() (see rockGradientId/rockShade in
    Wallpaper.tsx), NOT a flat color (an earlier pass used a flat tweened

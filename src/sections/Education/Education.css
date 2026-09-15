@@ -7,8 +7,14 @@
   transition-duration: 90ms;
 }
 
+/* Same thin ink-border edge treatment as Committees' cards and About's
+   pages (see journalArt.css) — was fill-only here, reading as flatter/
+   more cut-out than the other two paper objects. */
 .education-object__card {
   fill: var(--color-surface-paper-alt);
+  stroke: var(--color-text-on-paper-dim);
+  stroke-width: 0.6;
+  stroke-opacity: 0.3;
 }
 
 .education-object__line {

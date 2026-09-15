@@ -119,6 +119,15 @@
   --shadow-object-lifted: 0 20px 48px rgba(20, 6, 24, 0.55);
   --shadow-window: 0 24px 64px rgba(10, 3, 14, 0.6);
 
+  /* The current wallpaper state's own horizon color (Wallpaper.tsx tweens
+     this on document.documentElement in step with its sky crossfade) —
+     lets the five desktop objects' own contact shadows (sectionObject.css)
+     pick up a believable trace of ambient light per time-of-day state
+     without recoloring the objects themselves. This default (matching
+     night's own horizon) only ever shows before Wallpaper's first paint
+     or in a context that renders an object without a live Wallpaper. */
+  --ambient-light: var(--color-violet-800);
+
   /* --- Z-index scale ---
      Kept centralized since the desktop canvas, windows, docked tabs,
      and cursor all need explicit, non-competing stacking. */

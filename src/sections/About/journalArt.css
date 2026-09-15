@@ -21,6 +21,17 @@
   stop-color: var(--color-surface-paper-alt);
 }
 
+/* The paper recipe's own "thin ink border" (.material-paper's 1px
+   border, reproduced on Committees' cards too) was missing here — the
+   open pages had a fill but no edge at all, reading as a flatter cutout
+   than the other two paper objects. Same stroke weight/opacity as
+   Committees' cards for a consistent paper-family edge treatment. */
+.about-object__pages {
+  stroke: var(--color-text-on-paper-dim);
+  stroke-width: 0.6;
+  stroke-opacity: 0.3;
+}
+
 .about-object__gutter {
   stroke: var(--color-text-on-paper-dim);
   stroke-width: 0.6;

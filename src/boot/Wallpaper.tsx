@@ -267,13 +267,19 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   const violetShadow = getCssVar("--color-violet-shadow");
   const magentaVivid700 = getCssVar("--color-magenta-vivid-700");
   const magentaVivid600 = getCssVar("--color-magenta-vivid-600");
-  const magentaVivid400 = getCssVar("--color-magenta-vivid-400");
   const horizonGold = getCssVar("--color-horizon-gold");
   const moonlight = getCssVar("--color-moonlight");
   const moonlightWarm = getCssVar("--color-moonlight-warm");
   const ice500 = getCssVar("--color-ice-500");
+  const ice300 = getCssVar("--color-ice-300");
   const pearl = getCssVar("--color-pearl");
   const ink = getCssVar("--color-ink");
+  // Dusty/muted accents for dawn's softer, hazier read and dusk's
+  // restrained horizon warmth (see duskHorizon/dawnHorizon below) —
+  // deliberately desaturating tokens, not new hues, so both states stay
+  // inside the established plum/violet/magenta family.
+  const chrome300 = getCssVar("--color-chrome-300");
+  const plum500 = getCssVar("--color-plum-500");
 
   // Every mountain layer's tint is a blend of THIS state's own horizon
   // color and ink — more haze (less ink) the farther back the layer
@@ -331,16 +337,25 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
     };
   }
 
-  // Dusk: warmest/most golden.
-  const duskHorizon = mixHex(magentaVivid600, horizonGold, 0.4);
+  // Dusk: richer/more dramatic than dawn — deep blue → violet → magenta
+  // → a MUTED coral right at the horizon, not a conventional orange/red
+  // sunset. The plum-500 blend on top of the magenta/gold mix is what
+  // keeps that coral restrained (desaturated, warm-dark) rather than a
+  // vivid golden-hour glow — see duskSkyAccent/duskSkyMid below for the
+  // violet/magenta stages above it.
+  const duskHorizon = mixHex(mixHex(magentaVivid600, horizonGold, 0.35), plum500, 0.25);
   // Night: pulled toward magenta more than before (0.3 -> 0.55) so the
   // horizon has its own distinct hue-shift from the violet mid-sky
   // instead of sitting in the same violet family top to bottom — while
   // magentaVivid700 itself (unlike dusk's magentaVivid600) is dark/muted
   // enough that this still reads as "night," not a second dusk.
   const nightHorizon = mixHex(magentaVivid700, violet800, 0.55);
-  // Dawn: cooler than dusk, but still rich — never pale/washed out.
-  const dawnHorizon = mixHex(magentaVivid400, violet500, 0.25);
+  // Dawn: quiet, soft, hazy, slightly cool — a MUTED peach only at the
+  // very horizon (chrome-300's own greyish lavender is what desaturates
+  // the gold down from "golden hour" into "restrained warmth," per
+  // dawnSkyAccent/dawnSkyMid below for the dustier/cooler stages above
+  // it) rather than dusk's richer, more saturated read.
+  const dawnHorizon = mixHex(horizonGold, chrome300, 0.55);
 
   const duskTints = mountainTints(duskHorizon);
   const nightTints = mountainTints(nightHorizon);
@@ -373,9 +388,25 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
   // change); night's is deliberately pulled toward the icy-blue accent
   // tokens.css calls out as needing "a real functional home," breaking up
   // what was otherwise one continuous violet band top to bottom.
-  const duskSkyAccent = mixHex(indigo950, violet600, 0.5);
+  // Dusk's accent leans further into violet600 (0.5 -> 0.6) than before —
+  // part of making dusk read as the richer/deeper of the two bright
+  // states, with dawn's own accent (below) pulled toward a dustier,
+  // greyed mauve instead for its quieter/softer character.
+  const duskSkyAccent = mixHex(indigo950, violet600, 0.6);
   const nightSkyAccent = mixHex(violet800, ice500, 0.35);
-  const dawnSkyAccent = mixHex(indigo950, violet500, 0.45);
+  // Dawn: a "dusty mauve" — violet500 greyed down with chrome-300's own
+  // desaturated lavender rather than deepened with indigo950 the way
+  // dusk's accent is, so it reads softer/hazier instead of simply darker.
+  const dawnSkyAccent = mixHex(violet500, chrome300, 0.4);
+
+  // Sky mid-band: dusk's "magenta" stage (a real violet/magenta blend,
+  // richer than plain violet600) vs. dawn's "pale blue" stage (mostly
+  // ice300, tied back to the violet family by a minority blend rather
+  // than a bare, palette-unrelated baby blue) — this is the single
+  // biggest lever in differentiating the two, since it's the band that
+  // covers most of the visible sky above the mountains.
+  const duskSkyMid = mixHex(violet600, magentaVivid600, 0.45);
+  const dawnSkyMid = mixHex(ice300, violet500, 0.3);
 
   // Cloud base tint: mostly PEARL (bright, near-white) with only a
   // minority tint of the state's own horizon color, rather than the
@@ -417,7 +448,7 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       // horizon transforms, reinforcing "one continuous environment."
       skyTop: indigo950,
       skyAccent: duskSkyAccent,
-      skyMid: violet600,
+      skyMid: duskSkyMid,
       horizonColor: duskHorizon,
       // Raised from 0.7 — dusk's own sky is already bright and close in
       // hue to the glow's magenta/gold color, so the glow needs more
@@ -491,13 +522,14 @@ function buildScenes(): Record<TimeOfDay, SceneConfig> {
       starOpacity: 0.85,
     },
     dawn: {
-      // Still near-black indigo at the zenith and a genuinely saturated
-      // violet band — brightening/warming toward vivid pink at the
-      // horizon, never fading toward pale/pastel, to keep the same
-      // moody, nighttime-leaning world even in its lightest state.
+      // Still near-black indigo at the zenith (unchanged from dusk/night
+      // — see the dusk comment above on why) but otherwise the quietest,
+      // softest, hazy-cool state of the three: dusty mauve into a pale
+      // ice-blue band, warming only right at the horizon into a
+      // restrained, muted peach — never yellow/orange/sunny.
       skyTop: indigo950,
       skyAccent: dawnSkyAccent,
-      skyMid: violet500,
+      skyMid: dawnSkyMid,
       horizonColor: dawnHorizon,
       // Raised from 0.55 for the same reason as dusk above — dawn's sky
       // is bright and close in hue to the glow, so it needs the extra
@@ -617,6 +649,15 @@ export function Wallpaper() {
 
     function applyScene(scene: SceneConfig, duration: number) {
       const tl = gsap.timeline();
+      // Global (documentElement, not this instance's own subtree) since
+      // the five desktop objects live in a sibling component (Desktop.tsx)
+      // with no shared DOM ancestor to hang a scoped custom property on —
+      // see --ambient-light's own definition in tokens.css. The "Take
+      // Two" mirror renders a second live Wallpaper instance that writes
+      // the exact same deterministic value here too (same shared
+      // timeOfDay, same buildScenes() output), so a duplicate write from
+      // it is a harmless no-op, never a conflict.
+      tl.to(document.documentElement, { "--ambient-light": scene.horizonColor, duration }, 0);
       if (skyRef.current) {
         tl.to(
           skyRef.current,

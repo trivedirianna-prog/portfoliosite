@@ -51,8 +51,16 @@
   overflow: visible;
   /* Approximates --shadow-object-resting's own (non-inset) layer — a
      shape-following drop-shadow instead of box-shadow, since these are
-     no longer rounded rects that a rectangular box-shadow would suit. */
-  filter: drop-shadow(0 8px 24px rgba(20, 6, 24, 0.45));
+     no longer rounded rects that a rectangular box-shadow would suit.
+     A small trace of the current wallpaper state's own ambient light
+     (--ambient-light, see tokens.css/Wallpaper.tsx) is blended into the
+     shadow color — real contact shadows pick up a hint of whatever's
+     lighting the scene, so the same five objects read as sitting IN
+     each time-of-day state rather than pasted on top of it, without
+     recoloring the objects' own fills at all. */
+  filter: drop-shadow(
+    0 8px 24px color-mix(in srgb, rgba(20, 6, 24, 0.45) 88%, var(--ambient-light) 12%)
+  );
   transition:
     transform var(--duration-standard) var(--ease-standard),
     filter var(--duration-standard) var(--ease-standard),
@@ -63,7 +71,9 @@
 .section-object--projects:hover .section-object__art,
 .section-object--contact:hover .section-object__art {
   transform: translateY(-4px);
-  filter: drop-shadow(0 20px 48px rgba(20, 6, 24, 0.55));
+  filter: drop-shadow(
+    0 20px 48px color-mix(in srgb, rgba(20, 6, 24, 0.55) 85%, var(--ambient-light) 15%)
+  );
 }
 
 /* Paper family hover — same lift+rotate as .material-paper:hover. */
@@ -71,7 +81,9 @@
 .section-object--education:hover .section-object__art,
 .section-object--committees:hover .section-object__art {
   transform: translateY(-2px) rotate(-0.3deg);
-  filter: drop-shadow(0 20px 48px rgba(20, 6, 24, 0.55));
+  filter: drop-shadow(
+    0 20px 48px color-mix(in srgb, rgba(20, 6, 24, 0.55) 85%, var(--ambient-light) 15%)
+  );
 }
 
 .section-object__caption {
