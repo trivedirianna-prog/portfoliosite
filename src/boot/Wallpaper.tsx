@@ -1,7 +1,7 @@
-import { useId, useLayoutEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "../lib/gsap";
 import { getCssVar } from "../lib/theme";
-import { useWindowManager } from "../windows/WindowManager";
+import { useTimeOfDay, type TimeOfDay } from "./timeOfDay";
 import "./Wallpaper.css";
 
 /*
@@ -34,16 +34,13 @@ import "./Wallpaper.css";
 
   The wallpaper only transitions while idle (no window open, see
   WindowManager's isIdle) — it never competes for attention with content
-  the user is actively reading.
+  the user is actively reading. The idle-gated cycling itself now lives
+  in timeOfDay.tsx (a single shared interval/state), not here — this
+  component just reads the current TimeOfDay and animates to it, so a
+  second live instance (the "Take Two" project's desktop mirror, §8.3)
+  reacts to the exact same shared state instead of running its own,
+  independently-drifting copy of the same interval.
 */
-
-export type TimeOfDay = "dusk" | "night" | "dawn";
-
-const CYCLE: TimeOfDay[] = ["dusk", "night", "dawn"];
-
-// Placeholder pacing — how long a state holds before the system attempts
-// to advance (and only then if idle). Real timing is a later tuning pass.
-const HOLD_MS = 20000;
 
 interface SceneConfig {
   skyTop: string;
@@ -548,7 +545,7 @@ export function Wallpaper() {
   const rockGradientId = `${uid}-rock-gradient`;
   const cloudGradientId = `${uid}-cloud-gradient`;
 
-  const { isIdle } = useWindowManager();
+  const timeOfDay = useTimeOfDay();
   const skyRef = useRef<HTMLDivElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
   const horizonGlowGroupRef = useRef<SVGGElement>(null);
@@ -570,18 +567,20 @@ export function Wallpaper() {
   const cloudBottomStopRef = useRef<SVGStopElement>(null);
   const cloudsGroupRef = useRef<SVGGElement>(null);
   const starsRef = useRef<SVGGElement>(null);
-  const cycleIndexRef = useRef(0);
-
-  // Read inside the interval via a ref so the interval itself doesn't need
-  // to be torn down and recreated every time idle state flips.
-  const isIdleRef = useRef(isIdle);
-  isIdleRef.current = isIdle;
+  // Scene definitions are stable for the component's lifetime — built
+  // once (lazy initializer) rather than on every timeOfDay change.
+  const [scenes] = useState(() => buildScenes());
+  // First run for THIS instance should snap instantly (no crossfade to
+  // animate from) — matters most for the mirror's own Wallpaper copy,
+  // which mounts fresh already mid-cycle and must show the current
+  // state immediately, not fade in from a default.
+  const hasAppliedRef = useRef(false);
 
   // Layout effect (not a plain effect) so the first scene is applied
   // before the browser paints — otherwise there's a one-frame flash of
-  // unstyled defaults first.
+  // unstyled defaults first. Re-runs whenever the shared timeOfDay
+  // changes (see timeOfDay.tsx), rather than owning its own interval.
   useLayoutEffect(() => {
-    const scenes = buildScenes();
     const crossfadeDuration = parseSeconds(
       getCssVar("--duration-wallpaper-crossfade"),
     );
@@ -716,20 +715,14 @@ export function Wallpaper() {
       return tl;
     }
 
-    // Establish the first state instantly — nothing to crossfade from yet.
-    applyScene(scenes[CYCLE[cycleIndexRef.current]], 0);
-
-    const interval = window.setInterval(() => {
-      if (!isIdleRef.current) return; // skip this tick; never interrupts active use
-      cycleIndexRef.current = (cycleIndexRef.current + 1) % CYCLE.length;
-      applyScene(scenes[CYCLE[cycleIndexRef.current]], crossfadeDuration);
-    }, HOLD_MS);
-
-    return () => window.clearInterval(interval);
-    // Deliberately runs once: refs are stable for the component's lifetime,
-    // and isIdle is read via isIdleRef instead of restarting the interval.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // First-ever apply for this instance snaps instantly (nothing to
+    // crossfade from); every subsequent timeOfDay change animates.
+    const duration = hasAppliedRef.current ? crossfadeDuration : 0;
+    hasAppliedRef.current = true;
+    applyScene(scenes[timeOfDay], duration);
+    // `scenes` is a one-time lazy-initialized value (see useState above)
+    // that never changes, so including it here never causes an extra run.
+  }, [timeOfDay, scenes]);
 
   // Was 6 points — read as sparse even at night's full opacity. Expanded
   // to ~28, spread across the upper ~35% of the frame (clear of the

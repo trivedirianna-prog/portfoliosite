@@ -5,7 +5,7 @@ import { EducationWindow } from "../sections/Education/EducationWindow";
 import { CommitteesWindow } from "../sections/Committees/CommitteesWindow";
 import { PortfolioWindow } from "../sections/Projects/PortfolioWindow";
 import { PandoraWindow } from "../sections/Projects/PandoraWindow";
-import { AgriVerseWindow } from "../sections/Projects/AgriVerseWindow";
+import { TakeTwoWindow } from "../sections/Projects/TakeTwoWindow";
 import { ContactWindow } from "../sections/Contact/ContactWindow";
 import { useWindowManager } from "./WindowManager";
 
@@ -26,17 +26,27 @@ const windowContentComponents: Record<string, ComponentType<{ windowId: string }
   "committees:default": CommitteesWindow,
   "projects:portfolio": PortfolioWindow,
   "projects:pandora": PandoraWindow,
-  "projects:agriverse": AgriVerseWindow,
+  "projects:taketwo": TakeTwoWindow,
   "contact:default": ContactWindow,
 };
 
-export function WindowHost() {
+interface WindowHostProps {
+  /** Excludes one specific window instance from what's rendered — used
+   *  exclusively by the "Take Two" project's live desktop mirror (§8.3)
+   *  to render every OTHER open window live while leaving out its own
+   *  window (the only case that would otherwise recurse into itself
+   *  infinitely). Every other window/object still renders normally;
+   *  this never excludes anything broader than the one id given. */
+  excludeWindowId?: string;
+}
+
+export function WindowHost({ excludeWindowId }: WindowHostProps = {}) {
   const { windows } = useWindowManager();
 
   return (
     <>
       {windows
-        .filter((w) => w.status === "open")
+        .filter((w) => w.status === "open" && w.id !== excludeWindowId)
         .map((w) => {
           const Content = windowContentComponents[`${w.sectionId}:${w.kind}`];
           if (!Content) return null;

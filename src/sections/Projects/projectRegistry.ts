@@ -6,6 +6,6 @@
   project later means editing this one list; the fan-out math already
   adapts to whatever length it ends up being.
 */
-export const PROJECT_KINDS = ["portfolio", "pandora", "agriverse"] as const;
+export const PROJECT_KINDS = ["portfolio", "pandora", "taketwo"] as const;
 
 export type ProjectKind = (typeof PROJECT_KINDS)[number];

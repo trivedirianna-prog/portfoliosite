@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { gsap, Draggable } from "../lib/gsap";
+import { useIsMirror } from "./mirrorContext";
 import type { OriginRect } from "./types";
 import "./Window.css";
 
@@ -147,6 +148,7 @@ export function Window({
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const titlebarRef = useRef<HTMLDivElement>(null);
+  const isMirror = useIsMirror();
 
   // Runs once per mount — every fresh open AND every restore-from-minimize
   // is a fresh mount (WindowHost only renders "open" windows), so this
@@ -156,6 +158,15 @@ export function Window({
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
+
+    if (isMirror) {
+      // The live desktop mirror (Take Two, §8.3) always shows the
+      // settled state directly — no emerge animation, regardless of
+      // originRect, and no Draggable below (the whole mirror is
+      // non-interactive anyway).
+      gsap.set(el, { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 1, opacity: 1 });
+      return;
+    }
 
     if (originRect && openFromOrigin) {
       const rect = el.getBoundingClientRect();

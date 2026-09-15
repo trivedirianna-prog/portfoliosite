@@ -39,11 +39,11 @@ import "./Projects.css";
   useSectionWindow call here, the stagger/positioning math already
   adapts.
 
-  Stacking order is deliberate, not incidental: Portfolio (shipped,
-  most concrete) ends up frontmost, Pandora (designed prototype) in the
-  middle, AgriVerse (concept/pitch stage) furthest back — mirroring the
-  three projects' finished-ness tiers from §8.3. See handleOpen's
-  reversed open sequence for how that's actually achieved.
+  Stacking order is deliberate, not incidental: Take Two (this very
+  site, running live — arguably the most "real" of the three) ends up
+  frontmost, Portfolio (shipped, but a separate/earlier project) in the
+  middle, Pandora (designed prototype, never coded) furthest back. See
+  handleOpen's reversed open sequence for how that's actually achieved.
 */
 export function Projects() {
   const uid = useId();
@@ -62,9 +62,10 @@ export function Projects() {
   const { setOriginRect } = useWindowManager();
   const portfolio = useSectionWindow("projects", "portfolio");
   const pandora = useSectionWindow("projects", "pandora");
-  const agriverse = useSectionWindow("projects", "agriverse");
-  const projects = [portfolio, pandora, agriverse] as const;
-  const labels = ["Portfolio", "Pandora", "AgriVerse"] as const;
+  const taketwo = useSectionWindow("projects", "taketwo");
+  // Listed frontmost-to-back (see handleOpen's reversed open order).
+  const projects = [taketwo, portfolio, pandora] as const;
+  const labels = ["Take Two", "Portfolio", "Pandora"] as const;
   const windowsOpen = projects.some((p) => p.isOpen);
 
   function handleOpen() {
@@ -97,14 +98,14 @@ export function Projects() {
 
     // Each project window rides out along the gesture, staggered so the
     // fan-out reads as one continuous beat rather than a simultaneous
-    // pop. Opened back-to-front by finished-ness tier (§8.3): AgriVerse
-    // (concept/pitch stage) first, Pandora (designed prototype) next,
-    // Portfolio (shipped, most concrete) last — WindowManager stacks
-    // purely by open order (last-opened lands on top, the same
-    // mechanism About's cluster uses), so opening Portfolio last is what
-    // puts it frontmost, with AgriVerse ending up furthest back. This is
-    // the actual z-order mechanism, not a z-index override layered on
-    // afterward.
+    // pop. Opened back-to-front by finished-ness tier (§8.3): Pandora
+    // (designed prototype, never coded) first, Portfolio (shipped, but
+    // a separate/earlier project) next, Take Two (this live site) last
+    // — WindowManager stacks purely by open order (last-opened lands on
+    // top, the same mechanism About's cluster uses), so opening Take Two
+    // last is what puts it frontmost, with Pandora ending up furthest
+    // back. This is the actual z-order mechanism, not a z-index override
+    // layered on afterward.
     [...projects].reverse().forEach((project, i) => {
       tl.call(() => project.openOrRestore(), undefined, 0.16 + (i * FAN_STAGGER_MS) / 1000);
     });
