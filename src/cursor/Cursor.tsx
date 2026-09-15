@@ -48,6 +48,13 @@ const CLICKABLE_SELECTOR = "button:not(:disabled), a[href]";
 const DRAGGABLE_SELECTOR = ".window__titlebar";
 const TEXT_SELECTOR = ".contact-window__input";
 
+// Single source of truth for the arrow's outline, shared between the
+// visible fill and the clipPath that constrains the highlight/grip
+// accent to it (see the fix note below) — the two can never drift
+// apart, and adjusting the silhouette later only means editing this
+// one string.
+const ARROW_PATH = "M1,1 L1,19 L5.5,15 L9,23.5 L12,22.2 L8.5,14 L15,13.5 Z";
+
 function classify(el: Element | null): CursorState {
   if (!el) return "normal";
   if (el.closest(TEXT_SELECTOR)) return "text";
@@ -59,6 +66,7 @@ function classify(el: Element | null): CursorState {
 export function Cursor() {
   const uid = useId();
   const gradId = `${uid}-arrow`;
+  const clipId = `${uid}-clip`;
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<CursorState>("normal");
   const [visible, setVisible] = useState(false);
@@ -131,31 +139,35 @@ export function Cursor() {
             <stop offset="0%" className="cursor__stop-a" />
             <stop offset="100%" className="cursor__stop-b" />
           </linearGradient>
+          {/* Constrains the highlight/grip-glow to the arrow's own
+              outline (fix #1) — reusing the exact same path data as the
+              visible fill below, so the mask can never drift out of
+              sync with the shape it's meant to stay inside of. */}
+          <clipPath id={clipId}>
+            <path d={ARROW_PATH} />
+          </clipPath>
         </defs>
 
-        {/* Arrow + its highlight + the drag "grip" ticks all rotate/scale
+        {/* Arrow + its clipped highlight/grip-glow all rotate/scale
             together as one glyph per state; the text-state caret accent
             (below, outside this group) stays independently vertical. */}
         <g className="cursor__arrow-group">
-          <path
-            className="cursor__arrow"
-            d="M1,1 L1,19 L5.5,15 L9,23.5 L12,22.2 L8.5,14 L15,13.5 Z"
-            fill={`url(#${gradId})`}
-          />
-          <ellipse
-            className="cursor__highlight"
-            cx="4.4"
-            cy="5.6"
-            rx="2.4"
-            ry="3.6"
-            transform="rotate(-25 4.4 5.6)"
-          />
-          {/* Secondary "grip" indicator — a small physical cue read as
-              texture/traction rather than a hand/fist icon, so the
-              locked arrow silhouette never breaks (§13). */}
-          <g className="cursor__grip">
-            <line x1="2.6" y1="9" x2="6.6" y2="9" />
-            <line x1="2.6" y1="11.4" x2="6.6" y2="11.4" />
+          <path className="cursor__arrow" d={ARROW_PATH} fill={`url(#${gradId})`} />
+          <g clipPath={`url(#${clipId})`}>
+            <ellipse
+              className="cursor__highlight"
+              cx="4.4"
+              cy="5.6"
+              rx="2.4"
+              ry="3.6"
+              transform="rotate(-25 4.4 5.6)"
+            />
+            {/* Draggable's "grip" cue — a dim secondary glow near the
+                tail, same dominant-highlight/secondary-glow convention
+                every other glossy object on the site already uses
+                (materials.css), rather than a foreign tick-mark or
+                texture that risks reading as a separate shape. */}
+            <ellipse className="cursor__grip-glow" cx="10" cy="17.5" rx="3.2" ry="3.6" />
           </g>
         </g>
 

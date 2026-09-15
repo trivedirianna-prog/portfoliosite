@@ -59,11 +59,18 @@ html.custom-cursor-active * {
   mix-blend-mode: screen;
 }
 
-.cursor__grip {
+/* Fix #1: previously an unclipped ellipse, its soft blur bled past the
+   arrow's own edges on every state and read as a glow floating near the
+   cursor rather than light catching a glossy surface. Now wrapped in a
+   <clipPath> keyed to the exact same path data as the arrow fill (see
+   Cursor.tsx's ARROW_PATH/clipId), so the highlight — and the grip-glow
+   below — can never render outside the pointer's silhouette, at any
+   scale, tilt, or future shape edit. */
+
+.cursor__grip-glow {
+  fill: rgba(255, 255, 255, 0.4);
+  mix-blend-mode: screen;
   opacity: 0;
-  stroke: rgba(255, 255, 255, 0.85);
-  stroke-width: 1.1;
-  stroke-linecap: round;
   transition: opacity var(--duration-quick) var(--ease-standard);
 }
 
@@ -77,12 +84,15 @@ html.custom-cursor-active * {
 
 /* --- Per-state detail on the arrow group — same glyph throughout,
    understated differentiation only (§13: "should not announce itself
-   loudly"). transform-box/-origin pinned near the arrow's own tip so
-   scale/rotate reads as the glyph tilting from its point, not swelling
-   from its bounding-box center. --- */
+   loudly"). transform-origin pinned near the arrow's own tip (in the
+   SVG's own user-space units, i.e. the same coordinates ARROW_PATH is
+   drawn in — not `fill-box`, whose bounding-box-derived origin proved
+   unreliable enough with a multi-element group to distort the shape
+   under non-uniform scale, see fix #2) so scale/rotate reads as the
+   glyph tilting from its point, not swelling from its bounding-box
+   center. --- */
 .cursor__arrow-group {
-  transform-box: fill-box;
-  transform-origin: 0% 0%;
+  transform-origin: 1px 1px;
   transition: transform var(--duration-quick) var(--ease-standard);
 }
 
@@ -93,17 +103,28 @@ html.custom-cursor-active * {
   filter: drop-shadow(0 4px 10px rgba(20, 6, 24, 0.6));
 }
 
+/* Fix #2: was scale(1.06, 0.86) rotate(-3deg) — subtle on paper, but
+   compounded with the (then-unclipped) highlight's own bleed it read as
+   a stub/blob rather than an arrow, which directly violates §13's
+   "recognizable pointer silhouette in every state." Dialed back to a
+   barely-there squash; "grip" now reads mainly through the dim
+   secondary glow near the tail (cursor__grip-glow) rather than
+   deforming the shape further. */
 .cursor--draggable .cursor__arrow-group {
-  /* A slight compress (squashed vertically), not a shape swap — reads
-     as "gripping/under tension" per §13's brief. */
-  transform: scale(1.06, 0.86) rotate(-3deg);
+  transform: scale(1.02, 0.95) rotate(-2deg);
 }
-.cursor--draggable .cursor__grip {
+.cursor--draggable .cursor__grip-glow {
   opacity: 1;
 }
 
+/* Fix #3: was rotate(22deg) — on top of the arrow's own resting tilt,
+   that read as a near-90° turn into an "upload/north arrow," a
+   different silhouette rather than the same pointer styled differently
+   (contradicting the locked decision in §16 #7). No rotation now — the
+   base diagonal orientation matches normal/clickable exactly; scale and
+   the caret accent below carry the differentiation instead. */
 .cursor--text .cursor__arrow-group {
-  transform: scale(0.82) rotate(22deg);
+  transform: scale(0.8);
   opacity: 0.9;
 }
 .cursor--text .cursor__caret {
