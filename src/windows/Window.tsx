@@ -208,6 +208,24 @@ export function Window({
       return;
     }
 
+    // React StrictMode (dev only) deliberately double-invokes this effect
+    // (mount -> cleanup -> mount again) on the SAME DOM node without an
+    // actual unmount in between. The first invocation's gsap.fromTo below
+    // writes its FROM state (small scale, translated toward the origin
+    // icon) onto `el` immediately/synchronously — so without this reset,
+    // the second invocation's measurement below would read THAT
+    // transient, already-transformed box back as if it were the window's
+    // natural resting position, computing a near-zero travel distance for
+    // the tween that actually ends up persisting (the second one, since
+    // it's the later gsap.fromTo call targeting the same element/
+    // properties). That collapses the whole emerge-from-origin motion
+    // down to what looks like a plain opacity fade — killing any tween
+    // still targeting this element and clearing its transform/opacity
+    // back to plain CSS guarantees the measurement below always reflects
+    // the TRUE CSS-resting box, no matter how many times this runs.
+    gsap.killTweensOf(el);
+    gsap.set(el, { clearProps: "transform,opacity" });
+
     // Measure the window's NATURAL resting position — however its CSS
     // (the shared centered default, or a section's own off-center style
     // like the Projects fan-out) would place it before any GSAP x/y is
