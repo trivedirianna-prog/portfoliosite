@@ -1,0 +1,92 @@
+/*
+  Same glossy "hardware chip" recipe as Window.css's .window__control
+  (gradient base + inset highlight + a small proportional catch-light),
+  scaled up slightly since this sits alone on the open desktop rather
+  than crowded into a title bar — still reads as the same control
+  language, not a new button style. Fixed to the viewport corner (§12:
+  understated, doesn't compete for attention) rather than anchored to
+  any one section, since it's a property of the whole page, not a
+  desktop object.
+*/
+
+.fullscreen-toggle {
+  position: fixed;
+  right: max(var(--space-4), env(safe-area-inset-right, 0px));
+  bottom: max(var(--space-4), env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-docked-tabs);
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-pearl);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.18)),
+    var(--color-plum-600);
+  box-shadow:
+    var(--shadow-object-resting),
+    inset 0 1px 0 var(--color-border-glossy-highlight);
+  opacity: 0.72;
+  transition:
+    opacity var(--duration-quick) var(--ease-standard),
+    transform var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard),
+    filter var(--duration-quick) var(--ease-standard);
+}
+
+/* Small proportional catch-light — identical recipe to
+   .window__control::before, just re-measured for this control's own
+   36px box. */
+.fullscreen-toggle::before {
+  content: "";
+  position: absolute;
+  top: 4%;
+  left: 6%;
+  width: 30%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.7), transparent 75%);
+  transform: rotate(-15deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.fullscreen-toggle svg {
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.fullscreen-toggle svg path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fullscreen-toggle:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-object-lifted),
+    inset 0 1px 0 var(--color-border-glossy-highlight);
+}
+
+.fullscreen-toggle:active {
+  transform: translateY(0);
+  filter: brightness(0.88);
+  box-shadow: inset 0 1px 0 var(--color-border-glossy-highlight);
+}
+
+.fullscreen-toggle:focus-visible {
+  opacity: 1;
+  outline: 1.5px solid var(--color-pearl);
+  outline-offset: 2px;
+}
