@@ -32,11 +32,16 @@ type CursorState = "normal" | "clickable" | "draggable" | "text";
   ends.
 
   Position tracking uses gsap.quickTo (its own short internal tween per
-  call, driven by GSAP's ticker) rather than React state — a per-
-  mousemove setState would re-render this whole subtree at mouse-move
-  frequency. This keeps tracking off React entirely, so it stays smooth
-  alongside any other concurrent GSAP animation (drag, window open/
-  close, the CD-R fan-out) instead of competing with it for a render.
+  call, driven by GSAP's ticker) rather than React state — a per-move
+  setState would re-render this whole subtree at pointer-move frequency.
+  This keeps tracking off React entirely, so it stays smooth alongside
+  any other concurrent GSAP animation (drag, window open/close, the CD-R
+  fan-out) instead of competing with it for a render. Tracking listens
+  for `pointermove`, not `mousemove` — once Window.tsx's own Draggable
+  captures the pointer for an active drag, Chromium stops dispatching
+  the legacy mousemove event entirely, which previously froze the
+  cursor's on-screen position for the whole gesture. `pointermove` fires
+  in both the normal and pointer-captured cases.
 
   Skipped entirely on coarse-pointer (touch) devices — §16 #8 defers
   mobile/responsive work, and a page with its native cursor hidden and
@@ -86,7 +91,17 @@ export function Cursor() {
 
     let isDragging = false;
 
-    function handleMove(e: MouseEvent) {
+    // Position tracking listens for pointermove, not mousemove: once
+    // GSAP's Draggable captures the pointer for an active drag, Chromium
+    // stops dispatching the legacy mousemove compatibility event
+    // entirely (confirmed directly — a capture-phase listener saw zero
+    // mousemove events but a full stream of pointermove ones during a
+    // live drag) — with only mousemove wired up, the cursor's on-screen
+    // position froze at wherever the drag started, completely desynced
+    // from the real mouse for the rest of the gesture. pointermove fires
+    // in both the normal and pointer-captured cases, so it covers both
+    // without needing two listeners.
+    function handleMove(e: PointerEvent) {
       xTo(e.clientX);
       yTo(e.clientY);
       setVisible(true);
@@ -97,6 +112,9 @@ export function Cursor() {
       setState(classify(e.target as Element | null));
     }
 
+    // Same pointer-capture reasoning as handleMove above — mouseleave is
+    // a legacy mouse event too, so it's swapped for pointerleave to stay
+    // reliable if the pointer exits the viewport mid-drag.
     function handlePageLeave() {
       setVisible(false);
     }
@@ -113,17 +131,17 @@ export function Cursor() {
       setState(classify(target));
     }
 
-    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("pointermove", handleMove);
     document.addEventListener("mouseover", handleOver);
-    document.addEventListener("mouseleave", handlePageLeave);
+    document.addEventListener("pointerleave", handlePageLeave);
     window.addEventListener("cursor:drag-start", handleDragStart);
     window.addEventListener("cursor:drag-end", handleDragEnd);
 
     return () => {
       document.documentElement.classList.remove("custom-cursor-active");
-      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("pointermove", handleMove);
       document.removeEventListener("mouseover", handleOver);
-      document.removeEventListener("mouseleave", handlePageLeave);
+      document.removeEventListener("pointerleave", handlePageLeave);
       window.removeEventListener("cursor:drag-start", handleDragStart);
       window.removeEventListener("cursor:drag-end", handleDragEnd);
     };
