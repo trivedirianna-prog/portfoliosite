@@ -27,6 +27,7 @@ export function PandoraWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Pandora"
       material="glossy"
       className="pandora-window--shape"

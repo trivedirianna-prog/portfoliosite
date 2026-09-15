@@ -35,6 +35,7 @@ export function CommitteesWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Committees"
       material="paper"
       focused={focusedId === windowId}

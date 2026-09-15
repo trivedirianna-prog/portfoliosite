@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { gsap, Draggable } from "../lib/gsap";
 import { useIsMirror } from "./mirrorContext";
+import { publish, subscribe } from "./liveMirror";
 import type { OriginRect } from "./types";
 import "./Window.css";
 
@@ -67,6 +68,14 @@ import "./Window.css";
 */
 
 interface WindowProps {
+  /** Identifies this window instance for the live-mirror pub/sub
+   *  (liveMirror.ts) — drag position and scroll position are published
+   *  under channels keyed by this id, so Take Two's mirror rendering of
+   *  the SAME logical window (a separate React tree, same windowId
+   *  prop) can subscribe and reflect them live. Every WindowHost content
+   *  component already receives its own windowId from WindowManager, so
+   *  this is just forwarding it, not new state. */
+  windowId: string;
   title: string;
   material: "glossy" | "paper";
   /** Heavier shadow/presence — for a window meant to read as visually
@@ -169,6 +178,7 @@ function clampAxisDelta(
 const MINIMIZE_END_SCALE = 0.16;
 
 export function Window({
+  windowId,
   title,
   material,
   emphasis = false,
@@ -186,6 +196,7 @@ export function Window({
 }: WindowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const titlebarRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const draggableRef = useRef<Draggable | null>(null);
   const openAnimationRef = useRef<gsap.core.Tween | null>(null);
   const isMirror = useIsMirror();
@@ -203,9 +214,16 @@ export function Window({
       // The live desktop mirror (Take Two, §8.3) always shows the
       // settled state directly — no emerge animation, regardless of
       // originRect, and no Draggable below (the whole mirror is
-      // non-interactive anyway).
+      // non-interactive anyway). It DOES need to track the real
+      // window's live x/y though (§8.3 requires drag to be visible in
+      // the mirror) — subscribe to the same position channel the real
+      // instance publishes to below, and apply updates directly via
+      // gsap.set, never through React state (a setState per drag frame
+      // would re-render two full component trees).
       gsap.set(el, { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 1, opacity: 1 });
-      return;
+      return subscribe<{ x: number; y: number }>(`window-pos:${windowId}`, ({ x, y }) => {
+        gsap.set(el, { x, y });
+      });
     }
 
     // React StrictMode (dev only) deliberately double-invokes this effect
@@ -234,6 +252,14 @@ export function Window({
     const naturalRect = el.getBoundingClientRect();
     const restX = clampAxisDelta(naturalRect.left, naturalRect.right, window.innerWidth);
     const restY = clampAxisDelta(naturalRect.top, naturalRect.bottom, window.innerHeight);
+
+    // Seed the mirror's position channel with the RESTING x/y (not the
+    // emerge animation's intermediate frames) — the mirror already never
+    // replays open/close tweens, always showing the settled state, so
+    // this keeps that same rule for position: the mirror jumps straight
+    // to where this window ends up, then tracks it live from there via
+    // the onDrag/reclamp publishes below.
+    publish(`window-pos:${windowId}`, { x: restX, y: restY });
 
     if (originRect && openFromOrigin) {
       const dx =
@@ -299,6 +325,16 @@ export function Window({
           // rather than this generic window needing to know anything
           // about the cursor itself.
           onDragStart: () => window.dispatchEvent(new Event("cursor:drag-start")),
+          // Publish the live position on every drag update (GSAP already
+          // paces this to at most once per animation frame) so Take
+          // Two's mirror — a separate React tree with no other way to
+          // observe a transform Draggable writes directly to the DOM —
+          // can track the drag in real time. `this.x`/`this.y` are
+          // Draggable's own tracked values, exactly what it just wrote
+          // to the element's transform.
+          onDrag: function (this: Draggable) {
+            publish(`window-pos:${windowId}`, { x: this.x, y: this.y });
+          },
           onDragEnd: function (this: Draggable) {
             const point = this.pointerEvent as MouseEvent | undefined;
             window.dispatchEvent(
@@ -346,6 +382,10 @@ export function Window({
       if (dx || dy) {
         gsap.set(el, { x: `+=${dx}`, y: `+=${dy}` });
         draggableRef.current?.update(true);
+        publish(`window-pos:${windowId}`, {
+          x: gsap.getProperty(el, "x") as number,
+          y: gsap.getProperty(el, "y") as number,
+        });
       }
     }
 
@@ -365,7 +405,29 @@ export function Window({
       window.removeEventListener("resize", handlePotentialReflow);
       observer.disconnect();
     };
-  }, [isMirror]);
+  }, [isMirror, windowId]);
+
+  // Scroll sync for the mirror (§8.3): the REAL body publishes its
+  // scrollTop on every native `scroll` event; the mirror's own body
+  // (a separate DOM node in a separate React tree) subscribes and
+  // copies it directly, no React state involved either way. A no-op for
+  // any window whose content never actually overflows.
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+
+    if (isMirror) {
+      return subscribe<number>(`window-scroll:${windowId}`, (scrollTop) => {
+        body.scrollTop = scrollTop;
+      });
+    }
+
+    function handleScroll() {
+      publish(`window-scroll:${windowId}`, body!.scrollTop);
+    }
+    body.addEventListener("scroll", handleScroll, { passive: true });
+    return () => body.removeEventListener("scroll", handleScroll);
+  }, [isMirror, windowId]);
 
   function handleClose(e: React.MouseEvent) {
     e.stopPropagation();
@@ -478,7 +540,9 @@ export function Window({
           </button>
         </div>
       </div>
-      <div className="window__body">{children}</div>
+      <div className="window__body" ref={bodyRef}>
+        {children}
+      </div>
     </div>
   );
 }

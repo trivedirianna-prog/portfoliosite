@@ -33,6 +33,7 @@ export function EducationWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Education"
       material="paper"
       focused={focusedId === windowId}

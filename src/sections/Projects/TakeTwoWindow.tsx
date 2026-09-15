@@ -113,6 +113,7 @@ export function TakeTwoWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Take Two"
       material="glossy"
       className="taketwo-window--shape"

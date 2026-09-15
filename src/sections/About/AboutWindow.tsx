@@ -51,6 +51,7 @@ export function AboutWindow({ windowId }: { windowId: string }) {
       </div>
 
       <Window
+        windowId={windowId}
         title="About"
         material="paper"
         focused={focusedId === windowId}

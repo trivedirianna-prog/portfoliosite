@@ -1,6 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Window } from "../../windows/Window";
 import { useWindowManager } from "../../windows/WindowManager";
+import { useIsMirror } from "../../windows/mirrorContext";
+import { publish, subscribe } from "../../windows/liveMirror";
 import "./ContactWindow.css";
 
 /*
@@ -33,6 +35,45 @@ export function ContactWindow({ windowId }: { windowId: string }) {
   const { closeWindow, minimizeWindow, focusWindow, focusedId, originRects } =
     useWindowManager();
   const [status, setStatus] = useState<SendStatus>("idle");
+  const isMirror = useIsMirror();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  // Live-mirrors typed text into Take Two's desktop mirror (§8.3): these
+  // are plain uncontrolled fields (no value/onChange — React never holds
+  // their text), so the mirror's own separate <input> DOM nodes have no
+  // way to see what's typed here otherwise. The REAL instance publishes
+  // on every `input` event; the MIRROR instance (a separate React tree)
+  // subscribes and writes straight to its own field's `.value`, skipping
+  // React state entirely so typing doesn't re-render either tree. The
+  // mirror is pointer-events:none (TakeTwoWindow.css), so there's no
+  // risk of it ever publishing back and feeding into a loop.
+  useEffect(() => {
+    const fields: [string, HTMLInputElement | HTMLTextAreaElement | null][] = [
+      ["name", nameRef.current],
+      ["email", emailRef.current],
+      ["message", messageRef.current],
+    ];
+
+    if (isMirror) {
+      const unsubscribers = fields.map(([key, el]) => {
+        if (!el) return () => {};
+        return subscribe<string>(`contact-field:${windowId}:${key}`, (value) => {
+          el.value = value;
+        });
+      });
+      return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    }
+
+    const cleanups = fields.map(([key, el]) => {
+      if (!el) return () => {};
+      const handleInput = () => publish(`contact-field:${windowId}:${key}`, el.value);
+      el.addEventListener("input", handleInput);
+      return () => el.removeEventListener("input", handleInput);
+    });
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [isMirror, windowId]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,6 +98,7 @@ export function ContactWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Contact"
       material="glossy"
       className="contact-window--shape"
@@ -77,6 +119,7 @@ export function ContactWindow({ windowId }: { windowId: string }) {
           <label className="contact-window__field">
             <span className="contact-window__field-label label-mono">Name</span>
             <input
+              ref={nameRef}
               className="contact-window__input"
               type="text"
               name="name"
@@ -88,6 +131,7 @@ export function ContactWindow({ windowId }: { windowId: string }) {
           <label className="contact-window__field">
             <span className="contact-window__field-label label-mono">Email</span>
             <input
+              ref={emailRef}
               className="contact-window__input"
               type="email"
               name="email"
@@ -101,6 +145,7 @@ export function ContactWindow({ windowId }: { windowId: string }) {
               Your transmission
             </span>
             <textarea
+              ref={messageRef}
               className="contact-window__input contact-window__input--area"
               name="message"
               rows={4}

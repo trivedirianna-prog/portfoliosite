@@ -25,6 +25,7 @@ export function PortfolioWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Personal Portfolio"
       material="glossy"
       className="portfolio-window--shape"

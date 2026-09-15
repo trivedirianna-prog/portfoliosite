@@ -30,6 +30,7 @@ export function AboutPhotoWindow({ windowId }: { windowId: string }) {
 
   return (
     <Window
+      windowId={windowId}
       title="Photo"
       material="paper"
       emphasis
