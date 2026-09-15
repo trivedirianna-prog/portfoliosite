@@ -48,6 +48,13 @@ const WORDMARK_CHARS = WORDMARK_TEXT.split("");
 // style set by GSAP would otherwise permanently override the CSS
 // default rather than falling back to it).
 const SHINE_RESTING_OPACITY = 0.55;
+// Dusk/dawn's busier, brighter sky sits right behind the shine's own
+// screen-blended streak, eating into the contrast it needs to still read
+// as a distinct highlight rather than night's calmer near-black backdrop
+// — boosted here (both the CSS default below, via .wordmark__shine--
+// bright, and this animated boot path's own target) rather than left at
+// night's more subtle level.
+const SHINE_BRIGHT_OPACITY = 0.85;
 
 // Mrs Saint Delafield's capital R, extracted via opentype.js, is one
 // outer contour plus two counter-holes (fill-rule evenodd): one is the
@@ -70,6 +77,66 @@ interface WordmarkProps {
   onComplete?: () => void;
 }
 
+// Two earlier passes tried shifting dusk/dawn to a distinctly different
+// SATURATED hue family (rich jewel tones, then lighter coral/violet) to
+// hold contrast — both read as "a colored logo" rather than the same
+// white/pearl signature night uses, which was never the actual ask.
+// This version keeps the gradient overwhelmingly pearl/white (matching
+// night's own base) and only breathes in a trace of each state's own
+// ambient light: --color-horizon-color is never itself the palette's
+// lightest tone (see Wallpaper.tsx — it's "the richest, most saturated
+// point in the scene," and the mountains/clouds derive their OWN lighter
+// tints from mixing it heavily with pearl, e.g. duskCloudColor =
+// mixHex(pearl, duskHorizon, 0.35)), so these stops replicate that exact
+// mostly-pearl-plus-a-touch-of-horizon-hue recipe rather than inventing
+// a new one — a nested color-mix() reproducing Wallpaper.tsx's own
+// duskHorizon/dawnHorizon formulas (same token ingredients, same mix
+// ratios), then blending that at just 15%/25% into pearl. The result
+// reads as "white catching a hint of the sky around it," not a color
+// swap — contrast against the sky comes from the soft shadow and the
+// boosted shine below, not from hue-shifting the letters themselves.
+const DUSK_HORIZON_TINT =
+  "color-mix(in srgb, var(--color-magenta-vivid-600) 60%, var(--color-horizon-gold) 40%)";
+const DAWN_HORIZON_TINT =
+  "color-mix(in srgb, var(--color-magenta-vivid-400) 75%, var(--color-violet-500) 25%)";
+
+const BRIGHT_SKY_GRADIENTS: Record<"dusk" | "dawn", { offset: string; color: string }[]> = {
+  dusk: [
+    { offset: "0%", color: "var(--color-pearl)" },
+    {
+      offset: "45%",
+      color: `color-mix(in srgb, var(--color-pearl) 85%, ${DUSK_HORIZON_TINT} 15%)`,
+    },
+    {
+      offset: "100%",
+      color: `color-mix(in srgb, var(--color-pearl) 75%, ${DUSK_HORIZON_TINT} 25%)`,
+    },
+  ],
+  dawn: [
+    { offset: "0%", color: "var(--color-pearl)" },
+    {
+      offset: "45%",
+      color: `color-mix(in srgb, var(--color-pearl) 85%, ${DAWN_HORIZON_TINT} 15%)`,
+    },
+    {
+      offset: "100%",
+      color: `color-mix(in srgb, var(--color-pearl) 75%, ${DAWN_HORIZON_TINT} 25%)`,
+    },
+  ],
+};
+
+// A soft, blurred dark halo (never a stroke/outline — see the file
+// header note below) behind the letterforms — now doing MOST of the
+// contrast work, since the gradient itself stays close to pearl/white
+// rather than shifting hue for separation. Strengthened from the
+// coral/violet-era values accordingly; blur/opacity differ slightly per
+// state since dusk's warmer tint and dawn's cooler one read slightly
+// differently against their own skies.
+const BRIGHT_SKY_SHADOWS: Record<"dusk" | "dawn", { blur: number; opacity: number }> = {
+  dusk: { blur: 4, opacity: 0.45 },
+  dawn: { blur: 6, opacity: 0.55 },
+};
+
 export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const uid = useId();
   const bloomFilterId = `${uid}-bloom`;
@@ -78,23 +145,21 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
   const glyphGradientId = `${uid}-glyph-gradient`;
   const shineFilterId = `${uid}-shine-blur`;
   const shineGradientId = `${uid}-shine-gradient`;
-  const contrastOutlineId = `${uid}-contrast-outline`;
 
   // Night's sky sits near-black behind the wordmark, so the gradient's
   // pearl/icy-blue/magenta sweep (tuned against that dark backdrop) reads
-  // with strong contrast there. Dusk and dawn's sky is bright pink-
-  // magenta at the height the wordmark sits, and a light gradient on a
-  // similarly light, similarly-hued ground washes out — a lighter mid/
-  // end stop alone can't fix that, since the problem is contrast against
-  // the surroundings, not the gradient itself. Two independent, additive
-  // fixes, both gated to dusk/dawn only so night never regresses:
-  // deeper/more saturated stops (still the same pearl-to-ice-to-magenta
-  // character, just with more tonal weight to hold up against a bright
-  // ground) and a dark, cool-toned outline behind the letterforms
-  // (contrastOutlineId below) that separates them from the sky
-  // regardless of how close the hues sit.
+  // with strong contrast there. Dusk and dawn's sky is bright and close
+  // in hue to a pale gradient, so it washes out. Two earlier passes tried
+  // fixing this by changing what color the letters ARE (a hard outline
+  // filter — reverted, read as a traced sticker border; then a shift to
+  // saturated coral/violet — reverted, read as a colored logo instead of
+  // the same white/pearl signature). This version keeps the letters
+  // white/pearl (see BRIGHT_SKY_GRADIENTS above) and gets its contrast
+  // from the soft blurred shadow and boosted shine below instead.
   const timeOfDay = useTimeOfDay();
   const brightSky = timeOfDay === "dusk" || timeOfDay === "dawn";
+  const dropShadowFilterId = `${uid}-drop-shadow`;
+  const shadowConfig = brightSky ? BRIGHT_SKY_SHADOWS[timeOfDay] : null;
 
   const textRef = useRef<SVGTextElement>(null);
   const glowRef = useRef<SVGGElement>(null);
@@ -228,7 +293,11 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           "-=0.15",
         )
         .to(textRef.current, { strokeOpacity: 0, duration: 0.5 }, "<")
-        .to(shineRef.current, { opacity: SHINE_RESTING_OPACITY, duration: 0.5 }, "<")
+        .to(
+          shineRef.current,
+          { opacity: brightSky ? SHINE_BRIGHT_OPACITY : SHINE_RESTING_OPACITY, duration: 0.5 },
+          "<",
+        )
         .to(glowRef.current, { opacity: 1, duration: 0.9 }, "-=0.3");
     });
 
@@ -236,7 +305,12 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
       cancelled = true;
       tl?.kill();
     };
-  }, [animate, onComplete]);
+    // timeOfDay (via brightSky) decides the boot draw's final shine
+    // target only — re-running this effect on a time-of-day change just
+    // redoes the cheap geometry sizing above; boot's own animate=true
+    // pass always completes (~3.3s) long before the ~20s idle cycle can
+    // advance, so it never actually re-triggers mid-draw in practice.
+  }, [animate, onComplete, brightSky]);
 
   return (
     <svg
@@ -271,15 +345,17 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
             default) so it automatically spans the live text's own
             rendered box regardless of how the phrase reflows. */}
         <linearGradient id={glyphGradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-pearl)" />
-          <stop
-            offset="45%"
-            stopColor={brightSky ? "var(--color-ice-500)" : "var(--color-ice-300)"}
-          />
-          <stop
-            offset="100%"
-            stopColor={brightSky ? "var(--color-magenta-600)" : "var(--color-magenta-300)"}
-          />
+          {brightSky ? (
+            BRIGHT_SKY_GRADIENTS[timeOfDay].map((s) => (
+              <stop key={s.offset} offset={s.offset} stopColor={s.color} />
+            ))
+          ) : (
+            <>
+              <stop offset="0%" stopColor="var(--color-pearl)" />
+              <stop offset="45%" stopColor="var(--color-ice-300)" />
+              <stop offset="100%" stopColor="var(--color-magenta-300)" />
+            </>
+          )}
         </linearGradient>
         <filter id={shineFilterId} x="-50%" y="-150%" width="200%" height="400%">
           <feGaussianBlur stdDeviation="3" />
@@ -289,29 +365,30 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           <stop offset="50%" stopColor="#ffffff" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
-        {/* Dusk/dawn-only contrast outline (see the brightSky note above) —
-            a solid, dark, cool-toned halo built from the glyphs' own alpha
-            (dilated a few units, flood-filled dark, then merged back under
-            the original artwork) rather than a second stroked copy of the
-            text, so it automatically follows the live glyph shapes/kerning
-            with no separate geometry to keep in sync. Defined unconditionally
-            (cheap, unused defs cost nothing) but only ever referenced via
-            `filter` on the glyph group below when brightSky is true. */}
-        <filter
-          id={contrastOutlineId}
-          x="-20%"
-          y="-60%"
-          width="140%"
-          height="220%"
-        >
-          <feMorphology in="SourceAlpha" operator="dilate" radius="3.5" result="dilated" />
-          <feFlood floodColor="var(--color-ink)" floodOpacity="0.55" result="outline-color" />
-          <feComposite in="outline-color" in2="dilated" operator="in" result="outline" />
-          <feMerge>
-            <feMergeNode in="outline" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        {/* Dusk/dawn-only soft shadow (see the brightSky note above) — a
+            genuinely blurred dark halo (feDropShadow, same "soft blurred
+            highlight" language as every glossy object's catch-light, just
+            inverted dark) sitting BEHIND the letterforms for atmospheric
+            separation from the sky, never a crisp/traced edge at any zoom
+            level. Only defined/referenced when a shadow is actually wanted
+            for the current candidate. */}
+        {shadowConfig && (
+          <filter
+            id={dropShadowFilterId}
+            x="-40%"
+            y="-80%"
+            width="180%"
+            height="260%"
+          >
+            <feDropShadow
+              dx="0"
+              dy="2"
+              stdDeviation={shadowConfig.blur}
+              floodColor="var(--color-ink)"
+              floodOpacity={shadowConfig.opacity}
+            />
+          </filter>
+        )}
       </defs>
 
       {/* Soft outer bloom — appears only once the stroke finishes drawing.
@@ -324,14 +401,13 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
         <ellipse ref={innerGlowRef} fill={`url(#${innerGlowId})`} />
       </g>
 
-      {/* Grouped so the dusk/dawn contrast outline (see brightSky above)
-          wraps the live text AND its R-leg patch as one silhouette —
-          applying the filter to each separately would outline the patch's
-          own rectangular bounds too, visible as a faint seam inside the
-          leg rather than one clean outer edge. `filter` is only ever set
-          when brightSky is true; at night this is a plain, filter-less
-          group with zero rendering cost or visual change. */}
-      <g filter={brightSky ? `url(#${contrastOutlineId})` : undefined}>
+      {/* Grouped so the dusk/dawn soft shadow (see brightSky above) wraps
+          the live text AND its R-leg patch as one silhouette, reading as
+          one shadowed shape rather than two overlapping ones. `filter` is
+          only ever set when a shadow is actually wanted; at night (and
+          for a shadow-less candidate) this is a plain, filter-less group
+          with zero rendering cost or visual change. */}
+      <g filter={shadowConfig ? `url(#${dropShadowFilterId})` : undefined}>
         <text
           ref={textRef}
           x="450"
@@ -376,7 +452,7 @@ export function Wordmark({ animate = false, onComplete }: WordmarkProps) {
           effect once the real text geometry is known. */}
       <ellipse
         ref={shineRef}
-        className="wordmark__shine"
+        className={`wordmark__shine${brightSky ? " wordmark__shine--bright" : ""}`}
         fill={`url(#${shineGradientId})`}
         filter={`url(#${shineFilterId})`}
       />

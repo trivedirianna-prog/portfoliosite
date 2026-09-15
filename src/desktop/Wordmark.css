@@ -56,3 +56,12 @@
   opacity: 0.55;
   pointer-events: none;
 }
+
+/* Dusk/dawn boost — matches SHINE_BRIGHT_OPACITY in Wordmark.tsx exactly,
+   for the same reason the base rule above matches SHINE_RESTING_OPACITY.
+   Placed after the base rule so the source-order tie-break (both are
+   single-class selectors of equal specificity) resolves in its favor
+   whenever both classes are present. */
+.wordmark__shine--bright {
+  opacity: 0.85;
+}
